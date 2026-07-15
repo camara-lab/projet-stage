@@ -1,0 +1,629 @@
+{
+  "info": {
+    "name": "Bus Booking System",
+    "description": "Collection complète pour tester l'API REST du Bus Booking System.\n\n## Comptes de test\n- `passager@test.ma` / `Test1234` (ROLE_USER)\n- `passager2@test.ma` / `Test1234` (ROLE_USER)\n- `admin@test.ma` / `Admin1234` (ROLE_ADMIN)\n\n## Utilisation\n1. Exécuter **Auth > Login (Passager)** → le token JWT est sauvegardé automatiquement dans `{{token}}`\n2. Toutes les requêtes suivantes utilisent `{{token}}` en Authorization Bearer\n\n## Variables d'environnement requises\n- `base_url` : `http://localhost:8082`",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8082", "type": "string" },
+    { "key": "token", "value": "", "type": "string" },
+    { "key": "admin_token", "value": "", "type": "string" },
+    { "key": "booking_id", "value": "11", "type": "string" },
+    { "key": "trip_id", "value": "25", "type": "string" },
+    { "key": "user_id", "value": "11", "type": "string" }
+  ],
+  "item": [
+
+    {
+      "name": "🔐 Auth",
+      "item": [
+        {
+          "name": "Register (nouveau compte)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/auth/register", "host": ["{{base_url}}"], "path": ["api", "auth", "register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"nouveau@test.ma\",\n  \"password\": \"MonMotDePasse1\",\n  \"fullName\": \"Youssef Alami\",\n  \"phone\": \"0661112233\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login (Passager) → sauvegarde token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.token) {",
+                  "  pm.collectionVariables.set('token', json.token);",
+                  "  pm.collectionVariables.set('user_id', json.id || '11');",
+                  "  console.log('Token passager sauvegardé');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/auth/login", "host": ["{{base_url}}"], "path": ["api", "auth", "login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"passager@test.ma\",\n  \"password\": \"Test1234\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login (Admin) → sauvegarde admin_token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.token) {",
+                  "  pm.collectionVariables.set('admin_token', json.token);",
+                  "  console.log('Token admin sauvegardé');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/auth/login", "host": ["{{base_url}}"], "path": ["api", "auth", "login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@test.ma\",\n  \"password\": \"Admin1234\"\n}"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+
+    {
+      "name": "🚌 Trajets (public)",
+      "item": [
+        {
+          "name": "Lister tous les trajets",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/trips",
+              "host": ["{{base_url}}"],
+              "path": ["api", "trips"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Rechercher par IDs de villes (from/to)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/trips?from=16&to=18",
+              "host": ["{{base_url}}"],
+              "path": ["api", "trips"],
+              "query": [
+                { "key": "from", "value": "16", "description": "ID Casablanca" },
+                { "key": "to", "value": "18", "description": "ID Marrakech" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Rechercher par noms de villes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/trips?departureCity=Casablanca&arrivalCity=Marrakech",
+              "host": ["{{base_url}}"],
+              "path": ["api", "trips"],
+              "query": [
+                { "key": "departureCity", "value": "Casablanca" },
+                { "key": "arrivalCity", "value": "Marrakech" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Rechercher par ville + date",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/trips?from=16&to=18&date=2026-07-10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "trips"],
+              "query": [
+                { "key": "from", "value": "16" },
+                { "key": "to", "value": "18" },
+                { "key": "date", "value": "2026-07-10" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Détail d'un trajet",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/trips/{{trip_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "trips", "{{trip_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Trajet inexistant (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/trips/9999", "host": ["{{base_url}}"], "path": ["api", "trips", "9999"] }
+          },
+          "response": []
+        }
+      ]
+    },
+
+    {
+      "name": "📋 Réservations (passager)",
+      "item": [
+        {
+          "name": "Créer une réservation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.id) {",
+                  "  pm.collectionVariables.set('booking_id', json.id);",
+                  "  console.log('Booking ID sauvegardé : ' + json.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/bookings", "host": ["{{base_url}}"], "path": ["api", "bookings"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tripId\": {{trip_id}},\n  \"seatNumber\": 10\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Créer réservation → siège déjà pris (409)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/bookings", "host": ["{{base_url}}"], "path": ["api", "bookings"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tripId\": {{trip_id}},\n  \"seatNumber\": 10\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Créer réservation → siège invalide (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/bookings", "host": ["{{base_url}}"], "path": ["api", "bookings"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tripId\": {{trip_id}},\n  \"seatNumber\": 999\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Mes réservations",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{base_url}}/api/bookings", "host": ["{{base_url}}"], "path": ["api", "bookings"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Réservations par userId (propriétaire)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/bookings/user/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "bookings", "user", "{{user_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Détail d'une réservation",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/bookings/{{booking_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "bookings", "{{booking_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Détail réservation d'un autre user (403)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{base_url}}/api/bookings/12", "host": ["{{base_url}}"], "path": ["api", "bookings", "12"] }
+          },
+          "response": []
+        }
+      ]
+    },
+
+    {
+      "name": "💳 Paiements",
+      "item": [
+        {
+          "name": "Payer une réservation (WAFA_CASH)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/payments/booking/{{booking_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "payments", "booking", "{{booking_id}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"method\": \"WAFA_CASH\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Payer → CARTE_BANCAIRE",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/payments/booking/{{booking_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "payments", "booking", "{{booking_id}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"method\": \"CARTE_BANCAIRE\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Payer → déjà payée (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/payments/booking/{{booking_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "payments", "booking", "{{booking_id}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"method\": \"WAFA_CASH\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Payer → méthode invalide (422)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/payments/booking/{{booking_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "payments", "booking", "{{booking_id}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"method\": \"PAYPAL\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Payer réservation d'un autre user (403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/payments/booking/12", "host": ["{{base_url}}"], "path": ["api", "payments", "booking", "12"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"method\": \"CASH_PLUS\"\n}"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+
+    {
+      "name": "🛡️ Admin",
+      "item": [
+        {
+          "name": "Créer une ville",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/admin/cities", "host": ["{{base_url}}"], "path": ["api", "admin", "cities"] },
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Agadir\"\n}" }
+          },
+          "response": []
+        },
+        {
+          "name": "Créer une ville → doublon (409)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/admin/cities", "host": ["{{base_url}}"], "path": ["api", "admin", "cities"] },
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Casablanca\"\n}" }
+          },
+          "response": []
+        },
+        {
+          "name": "Créer une ligne (route)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/admin/routes", "host": ["{{base_url}}"], "path": ["api", "admin", "routes"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"departureCityId\": 16,\n  \"arrivalCityId\": 20,\n  \"basePrice\": 110.00\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Créer une ligne → même ville (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/admin/routes", "host": ["{{base_url}}"], "path": ["api", "admin", "routes"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"departureCityId\": 16,\n  \"arrivalCityId\": 16,\n  \"basePrice\": 50.00\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Ajouter un bus",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/admin/buses", "host": ["{{base_url}}"], "path": ["api", "admin", "buses"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plateNumber\": \"CTM-W-99999\",\n  \"totalSeats\": 44\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Ajouter un bus → capacité invalide (422)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/admin/buses", "host": ["{{base_url}}"], "path": ["api", "admin", "buses"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plateNumber\": \"CTM-W-00001\",\n  \"totalSeats\": 200\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Planifier un trajet",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/admin/trips", "host": ["{{base_url}}"], "path": ["api", "admin", "trips"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"routeId\": 1,\n  \"busId\": 1,\n  \"departureTime\": \"2026-08-01T08:00:00\",\n  \"arrivalTime\": \"2026-08-01T11:00:00\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Planifier trajet → bus déjà occupé (409)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/admin/trips", "host": ["{{base_url}}"], "path": ["api", "admin", "trips"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"routeId\": 1,\n  \"busId\": 1,\n  \"departureTime\": \"2026-08-01T09:00:00\",\n  \"arrivalTime\": \"2026-08-01T12:00:00\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Tableau de bord statistiques",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": { "raw": "{{base_url}}/api/admin/stats", "host": ["{{base_url}}"], "path": ["api", "admin", "stats"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Lister toutes les réservations",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": { "raw": "{{base_url}}/api/admin/bookings", "host": ["{{base_url}}"], "path": ["api", "admin", "bookings"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Réservations d'un user (admin)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/bookings/user/12",
+              "host": ["{{base_url}}"],
+              "path": ["api", "bookings", "user", "12"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Annuler une réservation PENDING",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/admin/bookings/{{booking_id}}/cancel",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "bookings", "{{booking_id}}", "cancel"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Annuler une réservation PAID → paiement REFUNDED",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": { "raw": "{{base_url}}/api/admin/bookings/12/cancel", "host": ["{{base_url}}"], "path": ["api", "admin", "bookings", "12", "cancel"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Annuler → déjà annulée (400)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/admin/bookings/{{booking_id}}/cancel",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "bookings", "{{booking_id}}", "cancel"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Accès admin sans token (401)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/admin/stats", "host": ["{{base_url}}"], "path": ["api", "admin", "stats"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Accès admin avec token passager (403)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{base_url}}/api/admin/stats", "host": ["{{base_url}}"], "path": ["api", "admin", "stats"] }
+          },
+          "response": []
+        }
+      ]
+    },
+
+    {
+      "name": "❤️ Health",
+      "item": [
+        {
+          "name": "Health check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/health", "host": ["{{base_url}}"], "path": ["api", "health"] }
+          },
+          "response": []
+        }
+      ]
+    }
+
+  ]
+}
