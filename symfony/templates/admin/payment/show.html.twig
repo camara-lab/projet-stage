@@ -1,0 +1,131 @@
+{% extends 'base.html.twig' %}
+{% block title %}Paiement #{{ payment.id }}{% endblock %}
+{% block page_title %}Détail du paiement #{{ payment.id }}{% endblock %}
+
+{% block body %}
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start">
+
+    {# ── Informations du paiement ── #}
+    <div class="section-card">
+        <div class="section-header">
+            <h6 class="section-title">
+                <i class="ti ti-credit-card" style="color:var(--accent-blue)"></i> Paiement
+            </h6>
+            {% set st = payment.paymentStatus|lower %}
+            {% if st == 'completed' %}
+                <span class="badge-pill badge-paid">COMPLÉTÉ</span>
+            {% elseif st == 'pending' %}
+                <span class="badge-pill badge-pending">EN ATTENTE</span>
+            {% else %}
+                <span class="badge-pill badge-refunded">REMBOURSÉ</span>
+            {% endif %}
+        </div>
+
+        <div style="padding:0">
+            {% set rows = [
+                {label: 'ID paiement',      value: '#' ~ payment.id},
+                {label: 'Montant',          value: payment.amount|number_format(2, ',', ' ') ~ ' DH'},
+                {label: 'Méthode',          value: payment.paymentMethod},
+                {label: 'Fournisseur',      value: payment.paymentProvider},
+                {label: 'ID transaction',   value: payment.transactionId ?? '—'},
+                {label: 'Date paiement',    value: payment.paymentDate|date('d/m/Y H:i:s')},
+                {label: 'Créé le',          value: payment.createdAt|date('d/m/Y H:i')},
+                {label: 'Mis à jour le',    value: payment.updatedAt|date('d/m/Y H:i')},
+            ] %}
+            {% for row in rows %}
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 18px;border-bottom:1px solid #f1f5f9">
+                <span style="font-size:12px;color:var(--text-secondary)">{{ row.label }}</span>
+                <span style="font-size:13px;font-weight:600;color:var(--text-primary)">{{ row.value }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    {# ── Colonne droite : réservation + passager ── #}
+    <div style="display:flex;flex-direction:column;gap:20px">
+
+        {# Réservation liée #}
+        <div class="section-card">
+            <div class="section-header">
+                <h6 class="section-title">
+                    <i class="ti ti-ticket" style="color:var(--accent-purple)"></i> Réservation liée
+                </h6>
+                {% set bs = payment.booking.status|lower %}
+                {% if bs == 'paid' %}
+                    <span class="badge-pill badge-paid">PAYÉE</span>
+                {% elseif bs == 'pending' %}
+                    <span class="badge-pill badge-pending">EN ATTENTE</span>
+                {% elseif bs == 'cancelled' %}
+                    <span class="badge-pill badge-cancelled">ANNULÉE</span>
+                {% else %}
+                    <span class="badge-pill badge-refunded">REMBOURSÉE</span>
+                {% endif %}
+            </div>
+            <div style="padding:0">
+                {% set brows = [
+                    {label: 'Réservation',  value: '#' ~ payment.booking.id},
+                    {label: 'Trajet',       value: payment.booking.trip.route.departureCity.name ~ ' → ' ~ payment.booking.trip.route.arrivalCity.name},
+                    {label: 'Départ',       value: payment.booking.trip.departureTime|date('d/m/Y H:i')},
+                    {label: 'Siège',        value: 'N°' ~ payment.booking.seatNumber},
+                    {label: 'Bus',          value: payment.booking.trip.bus.plateNumber},
+                    {label: 'Réservé le',   value: payment.booking.createdAt|date('d/m/Y H:i')},
+                ] %}
+                {% for row in brows %}
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 18px;border-bottom:1px solid #f1f5f9">
+                    <span style="font-size:12px;color:var(--text-secondary)">{{ row.label }}</span>
+                    <span style="font-size:13px;font-weight:600;color:var(--text-primary)">{{ row.value }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        {# Passager #}
+        <div class="section-card">
+            <div class="section-header">
+                <h6 class="section-title">
+                    <i class="ti ti-user" style="color:var(--accent-green)"></i> Passager
+                </h6>
+            </div>
+            <div style="padding:18px;display:flex;align-items:center;gap:14px">
+                <div style="width:46px;height:46px;border-radius:50%;background:var(--accent-blue);display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:700;flex-shrink:0">
+                    {{ payment.booking.user.fullName|slice(0,1)|upper }}
+                </div>
+                <div>
+                    <div style="font-size:14px;font-weight:700;color:var(--text-primary)">{{ payment.booking.user.fullName }}</div>
+                    <div style="font-size:12px;color:var(--text-muted)">{{ payment.booking.user.email }}</div>
+                    {% if payment.booking.user.phone %}
+                    <div style="font-size:12px;color:var(--text-muted);margin-top:2px">{{ payment.booking.user.phone }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{# ── Actions ── #}
+<div style="display:flex;align-items:center;gap:10px;margin-top:20px">
+    <a href="{{ path('admin_payment_edit', {id: payment.id}) }}"
+       style="display:inline-flex;align-items:center;gap:6px;padding:9px 18px;background:var(--accent-blue);color:#fff;border-radius:var(--radius-sm);font-size:13px;font-weight:600;text-decoration:none">
+        <i class="ti ti-pencil"></i> Modifier
+    </a>
+
+    {% if payment.paymentStatus == 'COMPLETED' %}
+    <form method="post" action="{{ path('admin_payment_refund', {id: payment.id}) }}"
+          onsubmit="return confirm('Rembourser ce paiement et annuler la réservation ?')">
+        <input type="hidden" name="_token" value="{{ csrf_token('refund-payment-' ~ payment.id) }}">
+        <button type="submit"
+                style="display:inline-flex;align-items:center;gap:6px;padding:9px 18px;background:var(--accent-orange);color:#fff;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer">
+            <i class="ti ti-refresh"></i> Rembourser
+        </button>
+    </form>
+    {% endif %}
+
+    <a href="{{ path('admin_payment_index') }}"
+       style="display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border:1px solid var(--card-border);color:var(--text-secondary);border-radius:var(--radius-sm);font-size:13px;font-weight:500;text-decoration:none">
+        <i class="ti ti-arrow-left"></i> Retour à la liste
+    </a>
+</div>
+
+{% endblock %}

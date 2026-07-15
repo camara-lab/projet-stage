@@ -1,0 +1,184 @@
+{% extends 'base.html.twig' %}
+{% block title %}Paiements{% endblock %}
+{% block page_title %}Paiements{% endblock %}
+
+{% block body %}
+
+{# ── KPIs ── #}
+<div class="kpi-grid mb-4" style="grid-template-columns: repeat(4,1fr)">
+
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Total encaissé</span>
+            <div class="kpi-icon-circle kpi-icon-green"><i class="ti ti-cash"></i></div>
+        </div>
+        <div class="kpi-value">{{ total|number_format(0,',',' ') }} <span class="kpi-unit">DH</span></div>
+        <div class="kpi-sub">Paiements COMPLETED</div>
+    </div>
+
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Complétés</span>
+            <div class="kpi-icon-circle kpi-icon-green"><i class="ti ti-circle-check"></i></div>
+        </div>
+        <div class="kpi-value">{{ completed }}</div>
+        <div class="kpi-sub">sur {{ payments|length }} paiements</div>
+    </div>
+
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">En attente</span>
+            <div class="kpi-icon-circle kpi-icon-orange"><i class="ti ti-clock"></i></div>
+        </div>
+        <div class="kpi-value">{{ pending }}</div>
+        <div class="kpi-sub">à traiter</div>
+    </div>
+
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Remboursés</span>
+            <div class="kpi-icon-circle kpi-icon-purple"><i class="ti ti-refresh"></i></div>
+        </div>
+        <div class="kpi-value">{{ refunded }}</div>
+        <div class="kpi-sub">paiements remboursés</div>
+    </div>
+
+</div>
+
+{# ── Tableau ── #}
+<div class="section-card">
+    <div class="section-header">
+        <h6 class="section-title"><i class="ti ti-credit-card" style="color:var(--accent-blue)"></i> Liste des paiements</h6>
+        <span style="font-size:12px;color:var(--text-muted)">{{ payments|length }} paiements</span>
+    </div>
+    <form method="get" action="{{ path('admin_payment_index') }}" class="filter-bar">
+        <div class="filter-group">
+            <label for="q">Passager / Transaction</label>
+            <input id="q" name="q" type="text" value="{{ search }}" placeholder="Nom, email ou ID transaction…" class="filter-input">
+        </div>
+        <div class="filter-group">
+            <label for="statut">Statut</label>
+            <select id="statut" name="statut" class="filter-select">
+                <option value="">Tous</option>
+                <option value="COMPLETED" {{ statut == 'COMPLETED' ? 'selected' }}>Complété</option>
+                <option value="PENDING"   {{ statut == 'PENDING'   ? 'selected' }}>En attente</option>
+                <option value="REFUNDED"  {{ statut == 'REFUNDED'  ? 'selected' }}>Remboursé</option>
+            </select>
+        </div>
+        <button type="submit" class="filter-btn"><i class="ti ti-search"></i> Filtrer</button>
+        {% if search != '' or statut != '' %}
+            <a href="{{ path('admin_payment_index') }}" class="filter-reset"><i class="ti ti-x"></i> Réinitialiser</a>
+        {% endif %}
+    </form>
+    <div class="filter-results">{{ payments|length }} paiements affichés</div>
+
+    <div style="overflow-x:auto">
+        <table class="activity-table" style="width:100%">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Date</th>
+                    <th>Passager</th>
+                    <th>Trajet</th>
+                    <th>Montant</th>
+                    <th>Méthode</th>
+                    <th>Transaction</th>
+                    <th>Statut</th>
+                    <th style="text-align:right">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in payments %}
+                <tr>
+                    <td style="color:var(--text-muted);font-size:11px">{{ p.id }}</td>
+                    <td style="font-size:12px">
+                        <div>{{ p.paymentDate|date('d/m/Y') }}</div>
+                        <div style="font-size:10.5px;color:var(--text-muted)">{{ p.paymentDate|date('H:i') }}</div>
+                    </td>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:8px">
+                            <div class="avatar-circle" style="background:#6366f1">
+                                {{ p.booking.user.fullName|slice(0,1)|upper }}
+                            </div>
+                            <div>
+                                <div style="font-size:12px;font-weight:600">{{ p.booking.user.fullName }}</div>
+                                <div style="font-size:10.5px;color:var(--text-muted)">{{ p.booking.user.email }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td style="font-size:12px">
+                        {{ p.booking.trip.route.departureCity.name }} → {{ p.booking.trip.route.arrivalCity.name }}<br>
+                        <span style="font-size:10.5px;color:var(--text-muted)">
+                            {{ p.booking.trip.departureTime|date('d/m/Y H:i') }}
+                        </span>
+                    </td>
+                    <td>
+                        <span style="font-size:14px;font-weight:700;color:var(--text-primary)">
+                            {{ p.amount|number_format(2,',',' ') }}
+                        </span>
+                        <span style="font-size:11px;color:var(--text-muted)"> DH</span>
+                    </td>
+                    <td>
+                        <span style="font-size:11px;font-weight:600;background:#f1f5f9;padding:3px 8px;border-radius:6px;color:var(--text-secondary)">
+                            {{ p.paymentMethod }}
+                        </span>
+                    </td>
+                    <td style="font-size:11px;color:var(--text-muted);font-family:monospace">
+                        {{ p.transactionId ?? '—' }}
+                    </td>
+                    <td>
+                        {% set st = p.paymentStatus|lower %}
+                        {% if st == 'completed' %}
+                            <span class="badge-pill badge-paid">COMPLÉTÉ</span>
+                        {% elseif st == 'pending' %}
+                            <span class="badge-pill badge-pending">EN ATTENTE</span>
+                        {% elseif st == 'refunded' %}
+                            <span class="badge-pill badge-refunded">REMBOURSÉ</span>
+                        {% else %}
+                            <span class="badge-pill badge-cancelled">{{ p.paymentStatus }}</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align:right;white-space:nowrap">
+
+                        {# Détail #}
+                        <a href="{{ path('admin_payment_show', {id: p.id}) }}"
+                           style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border:1px solid var(--card-border);border-radius:6px;font-size:11px;color:var(--text-secondary);text-decoration:none;margin-right:4px"
+                           title="Voir le détail">
+                            <i class="ti ti-eye"></i>
+                        </a>
+
+                        {# Modifier #}
+                        <a href="{{ path('admin_payment_edit', {id: p.id}) }}"
+                           style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border:1px solid var(--card-border);border-radius:6px;font-size:11px;color:var(--text-secondary);text-decoration:none;margin-right:4px"
+                           title="Modifier">
+                            <i class="ti ti-pencil"></i>
+                        </a>
+
+                        {# Rembourser rapide — seulement si COMPLETED #}
+                        {% if p.paymentStatus == 'COMPLETED' %}
+                        <form method="post" action="{{ path('admin_payment_refund', {id: p.id}) }}" class="d-inline"
+                              onsubmit="return confirm('Rembourser le paiement #{{ p.id }} et annuler la réservation liée ?')">
+                            <input type="hidden" name="_token" value="{{ csrf_token('refund-payment-' ~ p.id) }}">
+                            <button style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border:1px solid #fde68a;border-radius:6px;font-size:11px;color:var(--accent-orange);background:transparent;cursor:pointer"
+                                    title="Rembourser">
+                                <i class="ti ti-refresh"></i>
+                            </button>
+                        </form>
+                        {% endif %}
+
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="9" style="text-align:center;padding:32px;color:var(--text-muted);font-size:13px">
+                        <i class="ti ti-credit-card-off" style="font-size:24px;display:block;margin-bottom:8px"></i>
+                        Aucun paiement enregistré.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,97 @@
+services:
+  # -----------------------------------------------------------
+  # Service Applicatif : PHP 8.3 + Symfony 7 (PHP-FPM)
+  # -----------------------------------------------------------
+  app:
+    build:
+      context: ./docker/php
+      dockerfile: Dockerfile
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    container_name: bus_booking_app
+    restart: unless-stopped
+    working_dir: /var/www/symfony
+    volumes:
+      - ./symfony:/var/www/symfony:cached
+      - ./docker/php/php.ini:/usr/local/etc/php/conf.d/zz-custom.ini:ro
+    environment:
+      APP_ENV: ${APP_ENV:-dev}
+      APP_SECRET: ${APP_SECRET:-ChangeMeInEnvLocal}
+      DATABASE_URL: "mysql://app:app@db:3306/bus_booking?serverVersion=8.0.36&charset=utf8mb4"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - bus_booking_net
+
+  # -----------------------------------------------------------
+  # Service Web : Nginx (reverse proxy vers PHP-FPM)
+  # -----------------------------------------------------------
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: bus_booking_nginx
+    restart: unless-stopped
+    ports:
+      - "${NGINX_PORT:-8080}:80"
+    volumes:
+      - ./symfony:/var/www/symfony:cached
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - app
+    networks:
+      - bus_booking_net
+
+  # -----------------------------------------------------------
+  # Base de données : MySQL 8
+  # -----------------------------------------------------------
+  db:
+    image: mysql:8.0
+    container_name: bus_booking_db
+    restart: unless-stopped
+    command: --default-authentication-plugin=caching_sha2_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-bus_booking}
+      MYSQL_USER: ${MYSQL_USER:-app}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-app}
+    ports:
+      - "${MYSQL_PORT:-3307}:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-root}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - bus_booking_net
+
+  # -----------------------------------------------------------
+  # phpMyAdmin (outil de dev, lancé UNIQUEMENT avec --profile tools)
+  # Commande pour le démarrer :   docker compose --profile tools up -d
+  # -----------------------------------------------------------
+  phpmyadmin:
+    image: phpmyadmin:5.2
+    container_name: bus_booking_pma
+    restart: unless-stopped
+    profiles: ["tools"]
+    ports:
+      - "${PMA_PORT:-8081}:80"
+    environment:
+      PMA_HOST: db
+      PMA_USER: root
+      PMA_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      UPLOAD_LIMIT: 64M
+    depends_on:
+      - db
+    networks:
+      - bus_booking_net
+
+networks:
+  bus_booking_net:
+    driver: bridge
+
+volumes:
+  db_data:
+    driver: local

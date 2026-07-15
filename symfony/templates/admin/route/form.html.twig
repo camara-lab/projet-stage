@@ -1,0 +1,17 @@
+{% extends 'base.html.twig' %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block body %}
+<div class="card stat-card p-4" style="max-width:500px">
+    {{ form_start(form) }}
+    <div class="mb-3">{{ form_label(form.departureCity) }}{{ form_widget(form.departureCity) }}{{ form_errors(form.departureCity) }}</div>
+    <div class="mb-3">{{ form_label(form.arrivalCity) }}{{ form_widget(form.arrivalCity) }}{{ form_errors(form.arrivalCity) }}</div>
+    <div class="mb-3">{{ form_label(form.basePrice) }}{{ form_widget(form.basePrice) }}{{ form_errors(form.basePrice) }}</div>
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Enregistrer</button>
+        <a href="{{ path('admin_route_index') }}" class="btn btn-outline-secondary">Annuler</a>
+    </div>
+    {{ form_end(form) }}
+</div>
+{% endblock %}

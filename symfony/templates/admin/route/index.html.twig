@@ -1,0 +1,93 @@
+{% extends 'base.html.twig' %}
+{% block title %}Lignes{% endblock %}
+{% block page_title %}Lignes inter-villes{% endblock %}
+
+{% block body %}
+
+<div class="section-card">
+    <div class="section-header">
+        <h6 class="section-title"><i class="ti ti-route" style="color:var(--accent-blue)"></i> Lignes inter-villes</h6>
+        <a href="{{ path('admin_route_new') }}" style="display:inline-flex;align-items:center;gap:5px;padding:6px 14px;background:var(--accent-blue);color:#fff;border-radius:var(--radius-sm);font-size:12px;font-weight:600;text-decoration:none">
+            <i class="ti ti-plus"></i> Nouvelle ligne
+        </a>
+    </div>
+    <form method="get" action="{{ path('admin_route_index') }}" class="filter-bar">
+        <div class="filter-group">
+            <label for="depart">Ville de départ</label>
+            <input id="depart" name="depart" type="text" value="{{ depart }}" placeholder="Casablanca…" class="filter-input">
+        </div>
+        <div class="filter-group">
+            <label for="arrivee">Ville d'arrivée</label>
+            <input id="arrivee" name="arrivee" type="text" value="{{ arrivee }}" placeholder="Marrakech…" class="filter-input">
+        </div>
+        <button type="submit" class="filter-btn"><i class="ti ti-search"></i> Filtrer</button>
+        {% if depart != '' or arrivee != '' %}
+            <a href="{{ path('admin_route_index') }}" class="filter-reset"><i class="ti ti-x"></i> Réinitialiser</a>
+        {% endif %}
+    </form>
+    <div class="filter-results">{{ routes|length }} lignes affichées</div>
+    <div style="overflow-x:auto">
+        <table class="activity-table" style="width:100%">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Départ</th>
+                    <th>Arrivée</th>
+                    <th>Prix de base</th>
+                    <th>Trajets</th>
+                    <th style="text-align:right">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for route in routes %}
+                <tr>
+                    <td style="color:var(--text-muted);font-size:11px">{{ route.id }}</td>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:6px">
+                            <span style="width:8px;height:8px;border-radius:50%;background:var(--accent-green);display:inline-block;flex-shrink:0"></span>
+                            <span style="font-size:13px;font-weight:600">{{ route.departureCity.name }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:6px">
+                            <span style="width:8px;height:8px;border-radius:50%;background:var(--accent-red);display:inline-block;flex-shrink:0"></span>
+                            <span style="font-size:13px;font-weight:600">{{ route.arrivalCity.name }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <span style="font-size:14px;font-weight:700;color:var(--text-primary)">{{ route.basePrice }}</span>
+                        <span style="font-size:11px;color:var(--text-muted)"> DH</span>
+                    </td>
+                    <td>
+                        <span class="seat-badge">{{ route.trips|length }} trajets</span>
+                    </td>
+                    <td style="text-align:right;white-space:nowrap">
+                        <a href="{{ path('admin_route_edit', {id: route.id}) }}"
+                           style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border:1px solid var(--card-border);border-radius:6px;font-size:11px;color:var(--text-secondary);text-decoration:none;margin-right:4px"
+                           title="Modifier">
+                            <i class="ti ti-pencil"></i>
+                        </a>
+                        <form method="post" action="{{ path('admin_route_delete', {id: route.id}) }}" class="d-inline"
+                              onsubmit="return confirm('Supprimer cette ligne ?')">
+                            <input type="hidden" name="_token" value="{{ csrf_token('delete-route-' ~ route.id) }}">
+                            <button style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border:1px solid #fecaca;border-radius:6px;font-size:11px;color:var(--accent-red);background:transparent;cursor:pointer"
+                                    title="Supprimer">
+                                <i class="ti ti-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted);font-size:13px">
+                        <i class="ti ti-route-off" style="font-size:24px;display:block;margin-bottom:8px"></i>
+                        Aucune ligne créée.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

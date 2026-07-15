@@ -1,0 +1,128 @@
+{% extends 'base.html.twig' %}
+{% block title %}Trajets{% endblock %}
+{% block page_title %}Planification des trajets{% endblock %}
+
+{% block body %}
+
+<div class="section-card">
+    <div class="section-header">
+        <h6 class="section-title"><i class="ti ti-calendar-week" style="color:var(--accent-blue)"></i> Trajets planifiés</h6>
+        <a href="{{ path('admin_trip_new') }}" style="display:inline-flex;align-items:center;gap:5px;padding:6px 14px;background:var(--accent-blue);color:#fff;border-radius:var(--radius-sm);font-size:12px;font-weight:600;text-decoration:none">
+            <i class="ti ti-plus"></i> Planifier un trajet
+        </a>
+    </div>
+    <form method="get" action="{{ path('admin_trip_index') }}" class="filter-bar">
+        <div class="filter-group">
+            <label for="ligne">Ligne (ville)</label>
+            <input id="ligne" name="ligne" type="text" value="{{ ligne }}" placeholder="Casa, Tanger…"
+                   class="filter-input" list="cities-list" autocomplete="off">
+            <datalist id="cities-list">
+                {% for ville in villes %}
+                    <option value="{{ ville.name }}">
+                {% endfor %}
+            </datalist>
+        </div>
+        <div class="filter-group">
+            <label for="statut">Statut</label>
+            <select id="statut" name="statut" class="filter-select">
+                <option value="">Tous</option>
+                <option value="SCHEDULED"  {{ statut == 'SCHEDULED'  ? 'selected' }}>Planifié</option>
+                <option value="COMPLETED"  {{ statut == 'COMPLETED'  ? 'selected' }}>Terminé</option>
+                <option value="CANCELLED"  {{ statut == 'CANCELLED'  ? 'selected' }}>Annulé</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label for="date">Date de départ</label>
+            <input id="date" name="date" type="date" value="{{ date }}" class="filter-input">
+        </div>
+        <button type="submit" class="filter-btn"><i class="ti ti-search"></i> Filtrer</button>
+        {% if statut != '' or date != '' or ligne != '' %}
+            <a href="{{ path('admin_trip_index') }}" class="filter-reset"><i class="ti ti-x"></i> Réinitialiser</a>
+        {% endif %}
+    </form>
+    <div class="filter-results">{{ trips|length }} trajets affichés</div>
+    <div style="overflow-x:auto">
+        <table class="activity-table" style="width:100%">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Ligne</th>
+                    <th>Bus</th>
+                    <th>Départ</th>
+                    <th>Arrivée</th>
+                    <th>Réservations</th>
+                    <th>Statut</th>
+                    <th style="text-align:right">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for trip in trips %}
+                <tr>
+                    <td style="color:var(--text-muted);font-size:11px">{{ trip.id }}</td>
+                    <td style="font-weight:600;font-size:12px">
+                        {{ trip.route.departureCity.name }} → {{ trip.route.arrivalCity.name }}
+                    </td>
+                    <td>
+                        <span class="seat-badge">{{ trip.bus.plateNumber }}</span>
+                    </td>
+                    <td style="font-size:12px">{{ trip.departureTime|date('d/m/Y H:i') }}</td>
+                    <td style="font-size:12px">{{ trip.arrivalTime|date('d/m/Y H:i') }}</td>
+                    <td>
+                        <a href="{{ path('admin_booking_index') }}" style="font-size:12px;color:var(--accent-blue);text-decoration:none">
+                            {{ trip.bookings|length }} résa
+                        </a>
+                    </td>
+                    <td>
+                        {% set s = trip.status %}
+                        {% if s == 'SCHEDULED' %}
+                            <span class="badge-pill badge-pending">PLANIFIÉ</span>
+                        {% elseif s == 'COMPLETED' %}
+                            <span class="badge-pill badge-paid">TERMINÉ</span>
+                        {% else %}
+                            <span class="badge-pill badge-cancelled">ANNULÉ</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align:right;white-space:nowrap">
+                        {% if trip.status == 'SCHEDULED' %}
+                            <a href="{{ path('admin_trip_edit', {id: trip.id}) }}"
+                               style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border:1px solid var(--card-border);border-radius:6px;font-size:11px;color:var(--text-secondary);text-decoration:none;margin-right:4px"
+                               title="Modifier">
+                                <i class="ti ti-pencil"></i>
+                            </a>
+                            <form method="post" action="{{ path('admin_trip_cancel', {id: trip.id}) }}" class="d-inline"
+                                  onsubmit="return confirm('Annuler ce trajet ?')">
+                                <input type="hidden" name="_token" value="{{ csrf_token('cancel-trip-' ~ trip.id) }}">
+                                <button style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border:1px solid #fecaca;border-radius:6px;font-size:11px;color:var(--accent-red);background:transparent;cursor:pointer;margin-right:4px"
+                                        title="Annuler">
+                                    <i class="ti ti-x"></i>
+                                </button>
+                            </form>
+                            {% if trip.bookings|length == 0 %}
+                            <form method="post" action="{{ path('admin_trip_delete', {id: trip.id}) }}" class="d-inline"
+                                  onsubmit="return confirm('Supprimer définitivement ce trajet ?')">
+                                <input type="hidden" name="_token" value="{{ csrf_token('delete-trip-' ~ trip.id) }}">
+                                <button style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border:1px solid #fecaca;border-radius:6px;font-size:11px;color:var(--accent-red);background:transparent;cursor:pointer"
+                                        title="Supprimer">
+                                    <i class="ti ti-trash"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                        {% else %}
+                            <span style="font-size:12px;color:var(--text-muted)">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" style="text-align:center;padding:32px;color:var(--text-muted);font-size:13px">
+                        <i class="ti ti-calendar-off" style="font-size:24px;display:block;margin-bottom:8px"></i>
+                        Aucun trajet planifié.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

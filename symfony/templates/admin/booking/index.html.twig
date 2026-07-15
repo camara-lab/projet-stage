@@ -1,0 +1,125 @@
+{% extends 'base.html.twig' %}
+{% block title %}Réservations{% endblock %}
+{% block page_title %}Toutes les réservations{% endblock %}
+
+{% block body %}
+
+<div class="section-card">
+    <div class="section-header">
+        <h6 class="section-title"><i class="ti ti-ticket" style="color:var(--accent-blue)"></i> Réservations</h6>
+        <span style="font-size:12px;color:var(--text-muted)">{{ bookings|length }} réservations</span>
+    </div>
+    <form method="get" action="{{ path('admin_booking_index') }}" class="filter-bar">
+        <div class="filter-group">
+            <label for="q">Passager</label>
+            <input id="q" name="q" type="text" value="{{ search }}" placeholder="Nom ou email…" class="filter-input">
+        </div>
+        <div class="filter-group">
+            <label for="statut">Statut</label>
+            <select id="statut" name="statut" class="filter-select">
+                <option value="">Tous</option>
+                <option value="PENDING"   {{ statut == 'PENDING'   ? 'selected' }}>En attente</option>
+                <option value="PAID"      {{ statut == 'PAID'      ? 'selected' }}>Payée</option>
+                <option value="CANCELLED" {{ statut == 'CANCELLED' ? 'selected' }}>Annulée</option>
+                <option value="REFUNDED"  {{ statut == 'REFUNDED'  ? 'selected' }}>Remboursée</option>
+            </select>
+        </div>
+        <button type="submit" class="filter-btn"><i class="ti ti-search"></i> Filtrer</button>
+        {% if search != '' or statut != '' %}
+            <a href="{{ path('admin_booking_index') }}" class="filter-reset"><i class="ti ti-x"></i> Réinitialiser</a>
+        {% endif %}
+    </form>
+    <div class="filter-results">{{ bookings|length }} réservations affichées</div>
+    <div style="overflow-x:auto">
+        <table class="activity-table" style="width:100%">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Passager</th>
+                    <th>Trajet</th>
+                    <th>Siège</th>
+                    <th>Statut</th>
+                    <th>Date</th>
+                    <th style="text-align:right">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in bookings %}
+                <tr>
+                    <td style="color:var(--text-muted);font-size:11px">{{ b.id }}</td>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:8px">
+                            <div class="avatar-circle">{{ b.user.fullName|slice(0,1)|upper }}</div>
+                            <div>
+                                <div style="font-size:12px;font-weight:600">{{ b.user.fullName }}</div>
+                                <div style="font-size:10.5px;color:var(--text-muted)">{{ b.user.email }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td style="font-size:12px">
+                        {{ b.trip.route.departureCity.name }} → {{ b.trip.route.arrivalCity.name }}<br>
+                        <span style="font-size:10.5px;color:var(--text-muted)">{{ b.trip.departureTime|date('d/m/Y H:i') }}</span>
+                    </td>
+                    <td><span class="seat-badge">Siège {{ b.seatNumber }}</span></td>
+                    <td>
+                        {% set st = b.status|lower %}
+                        {% if st == 'paid' %}
+                            <span class="badge-pill badge-paid">PAYÉE</span>
+                        {% elseif st == 'pending' %}
+                            <span class="badge-pill badge-pending">EN ATTENTE</span>
+                        {% elseif st == 'cancelled' %}
+                            <span class="badge-pill badge-cancelled">ANNULÉE</span>
+                        {% elseif st == 'refunded' %}
+                            <span class="badge-pill badge-refunded">REMBOURSÉE</span>
+                        {% else %}
+                            <span class="badge-pill badge-pending">{{ b.status }}</span>
+                        {% endif %}
+                        {% if b.payment %}
+                            <div style="font-size:10px;color:var(--text-muted);margin-top:2px">{{ b.payment.paymentMethod }}</div>
+                        {% endif %}
+                    </td>
+                    <td style="font-size:12px;color:var(--text-muted)">{{ b.createdAt|date('d/m/Y') }}</td>
+                    <td style="text-align:right;white-space:nowrap">
+                        <a href="{{ path('admin_booking_ticket', {id: b.id}) }}"
+                           target="_blank"
+                           style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border:1px solid #bfdbfe;border-radius:6px;font-size:11px;color:var(--accent-blue);text-decoration:none;margin-right:4px"
+                           title="Télécharger billet PDF">
+                            <i class="ti ti-file-type-pdf"></i>
+                        </a>
+                        <a href="{{ path('admin_booking_edit', {id: b.id}) }}"
+                           style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border:1px solid var(--card-border);border-radius:6px;font-size:11px;color:var(--text-secondary);text-decoration:none;margin-right:4px"
+                           title="Modifier">
+                            <i class="ti ti-pencil"></i>
+                        </a>
+                        {% if b.status != 'CANCELLED' %}
+                        <form method="post"
+                              action="{{ path('admin_booking_cancel', {id: b.id}) }}"
+                              class="d-inline"
+                              onsubmit="return confirm('Annuler la réservation #{{ b.id }} ?{% if b.status == 'PAID' %} Le paiement sera remboursé.{% endif %}')">
+                            <input type="hidden" name="_token" value="{{ csrf_token('cancel-booking-' ~ b.id) }}">
+                            <button style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border:1px solid #fecaca;border-radius:6px;font-size:11px;color:var(--accent-red);background:transparent;cursor:pointer"
+                                    title="Annuler">
+                                <i class="ti ti-x"></i>
+                            </button>
+                        </form>
+                        {% else %}
+                            <span style="display:inline-flex;align-items:center;padding:4px 10px;border:1px solid var(--card-border);border-radius:6px;font-size:11px;color:var(--text-muted)">
+                                <i class="ti ti-minus"></i>
+                            </span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted);font-size:13px">
+                        <i class="ti ti-ticket-off" style="font-size:24px;display:block;margin-bottom:8px"></i>
+                        Aucune réservation.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

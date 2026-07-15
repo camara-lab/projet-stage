@@ -1,0 +1,67 @@
+{% extends 'base.html.twig' %}
+{% block title %}Modifier la réservation #{{ booking.id }}{% endblock %}
+{% block page_title %}Modifier la réservation #{{ booking.id }}{% endblock %}
+
+{% block body %}
+<div class="row g-4">
+
+    {# ── Formulaire de modification ── #}
+    <div class="col-md-6">
+        <div class="card stat-card p-4">
+            <h6 class="fw-bold mb-3"><i class="bi bi-pencil-square me-1 text-primary"></i>Modifier</h6>
+            {{ form_start(form) }}
+
+            <div class="mb-3">
+                {{ form_label(form.seatNumber) }}
+                {{ form_widget(form.seatNumber) }}
+                {{ form_errors(form.seatNumber) }}
+                <small class="text-muted">Capacité du bus : {{ booking.trip.bus.totalSeats }} places</small>
+            </div>
+
+            <div class="mb-4">
+                {{ form_label(form.status) }}
+                {{ form_widget(form.status) }}
+                {{ form_errors(form.status) }}
+                {% if booking.status == 'PAID' %}
+                    <small class="text-warning"><i class="bi bi-exclamation-triangle me-1"></i>
+                        Passer à CANCELLED remboursera automatiquement le paiement.</small>
+                {% endif %}
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-lg me-1"></i>Enregistrer
+                </button>
+                <a href="{{ path('admin_booking_index') }}" class="btn btn-outline-secondary">Annuler</a>
+            </div>
+
+            {{ form_end(form) }}
+        </div>
+    </div>
+
+    {# ── Récapitulatif de la réservation ── #}
+    <div class="col-md-6">
+        <div class="card stat-card p-4">
+            <h6 class="fw-bold mb-3"><i class="bi bi-info-circle me-1 text-secondary"></i>Récapitulatif</h6>
+            <table class="table table-sm table-borderless mb-0">
+                <tr><th class="text-muted w-50">Réservation</th><td>#{{ booking.id }}</td></tr>
+                <tr><th class="text-muted">Passager</th><td>{{ booking.user.fullName }}<br><small class="text-muted">{{ booking.user.email }}</small></td></tr>
+                <tr><th class="text-muted">Trajet</th>
+                    <td>{{ booking.trip.route.departureCity.name }} → {{ booking.trip.route.arrivalCity.name }}<br>
+                        <small class="text-muted">{{ booking.trip.departureTime|date('d/m/Y à H:i') }}</small></td></tr>
+                <tr><th class="text-muted">Bus</th><td>{{ booking.trip.bus.plateNumber }} ({{ booking.trip.bus.totalSeats }} places)</td></tr>
+                <tr><th class="text-muted">Siège actuel</th><td><span class="badge bg-secondary">{{ booking.seatNumber }}</span></td></tr>
+                <tr><th class="text-muted">Statut actuel</th>
+                    <td><span class="badge badge-{{ booking.status|lower }}">{{ booking.status }}</span></td></tr>
+                <tr><th class="text-muted">Créée le</th><td>{{ booking.createdAt|date('d/m/Y H:i') }}</td></tr>
+                {% if booking.payment %}
+                <tr><th class="text-muted">Paiement</th>
+                    <td>{{ booking.payment.amount }} DH — {{ booking.payment.paymentMethod }}<br>
+                        <span class="badge badge-{{ booking.payment.paymentStatus|lower }}">{{ booking.payment.paymentStatus }}</span></td></tr>
+                {% endif %}
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,95 @@
+{% extends 'base.html.twig' %}
+{% block title %}Bus{% endblock %}
+{% block page_title %}Flotte de bus{% endblock %}
+
+{% block body %}
+
+<div class="section-card">
+    <div class="section-header">
+        <h6 class="section-title"><i class="ti ti-bus" style="color:var(--accent-blue)"></i> Flotte de bus</h6>
+        <a href="{{ path('admin_bus_new') }}" style="display:inline-flex;align-items:center;gap:5px;padding:6px 14px;background:var(--accent-blue);color:#fff;border-radius:var(--radius-sm);font-size:12px;font-weight:600;text-decoration:none">
+            <i class="ti ti-plus"></i> Ajouter un bus
+        </a>
+    </div>
+    <form method="get" action="{{ path('admin_bus_index') }}" class="filter-bar">
+        <div class="filter-group">
+            <label for="q">Immatriculation</label>
+            <input id="q" name="q" type="text" value="{{ search }}" placeholder="CTM-W-…" class="filter-input">
+        </div>
+        <div class="filter-group">
+            <label for="statut">Statut</label>
+            <select id="statut" name="statut" class="filter-select">
+                <option value="">Tous</option>
+                <option value="AVAILABLE"   {{ statut == 'AVAILABLE'   ? 'selected' }}>Disponible</option>
+                <option value="MAINTENANCE" {{ statut == 'MAINTENANCE' ? 'selected' }}>Maintenance</option>
+            </select>
+        </div>
+        <button type="submit" class="filter-btn"><i class="ti ti-search"></i> Filtrer</button>
+        {% if search != '' or statut != '' %}
+            <a href="{{ path('admin_bus_index') }}" class="filter-reset"><i class="ti ti-x"></i> Réinitialiser</a>
+        {% endif %}
+    </form>
+    <div class="filter-results">{{ buses|length }} bus affichés</div>
+    <div style="overflow-x:auto">
+        <table class="activity-table" style="width:100%">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Immatriculation</th>
+                    <th>Places</th>
+                    <th>Statut</th>
+                    <th style="text-align:right">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for bus in buses %}
+                <tr>
+                    <td style="color:var(--text-muted);font-size:11px">{{ bus.id }}</td>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:7px">
+                            <div style="width:28px;height:28px;border-radius:50%;background:#dbeafe;display:flex;align-items:center;justify-content:center;color:var(--accent-blue);font-size:13px;flex-shrink:0">
+                                <i class="ti ti-bus"></i>
+                            </div>
+                            <span style="font-size:13px;font-weight:600;color:var(--text-primary)">{{ bus.plateNumber }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="seat-badge">{{ bus.totalSeats }} places</span>
+                    </td>
+                    <td>
+                        {% if bus.status == 'AVAILABLE' %}
+                            <span class="badge-pill badge-paid">Disponible</span>
+                        {% else %}
+                            <span class="badge-pill badge-cancelled">Maintenance</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align:right;white-space:nowrap">
+                        <a href="{{ path('admin_bus_edit', {id: bus.id}) }}"
+                           style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border:1px solid var(--card-border);border-radius:6px;font-size:11px;color:var(--text-secondary);text-decoration:none;margin-right:4px"
+                           title="Modifier">
+                            <i class="ti ti-pencil"></i>
+                        </a>
+                        <form method="post" action="{{ path('admin_bus_delete', {id: bus.id}) }}" class="d-inline"
+                              onsubmit="return confirm('Supprimer ce bus ?')">
+                            <input type="hidden" name="_token" value="{{ csrf_token('delete-bus-' ~ bus.id) }}">
+                            <button style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border:1px solid #fecaca;border-radius:6px;font-size:11px;color:var(--accent-red);background:transparent;cursor:pointer"
+                                    title="Supprimer">
+                                <i class="ti ti-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" style="text-align:center;padding:32px;color:var(--text-muted);font-size:13px">
+                        <i class="ti ti-bus-off" style="font-size:24px;display:block;margin-bottom:8px"></i>
+                        Aucun bus enregistré.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

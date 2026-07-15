@@ -1,0 +1,129 @@
+# =============================================================
+# Bus Booking System  .gitignore
+# Stack : Symfony 7 / PHP 8.3 / MySQL 8 / Nginx / Docker
+# Front : Next.js 14 / TailwindCSS
+# =============================================================
+
+# -------------------------------------------------------------
+# Variables d'environnement  JAMAIS versionner les secrets
+# -------------------------------------------------------------
+.env
+.env.local
+.env.local.php
+.env.*.local
+!.env.example
+!.env.dist
+
+# -------------------------------------------------------------
+# Symfony 7 fichiers générés / dépendances
+# (structure : dossier `symfony/` contient l'app Symfony)
+# -------------------------------------------------------------
+symfony/vendor/
+symfony/var/
+symfony/public/bundles/
+symfony/public/build/
+symfony/public/uploads/
+symfony/config/secrets/*/*.local.php
+symfony/composer.phar
+
+# Webpack Encore / AssetMapper
+symfony/node_modules/
+symfony/public/assets/
+symfony/assets/vendor/
+symfony/importmap.php.lock
+
+# -------------------------------------------------------------
+# Qualité : caches des outils
+# -------------------------------------------------------------
+symfony/.phpunit.result.cache
+symfony/.phpunit.cache/
+symfony/.php-cs-fixer.cache
+symfony/.phpstan.cache/
+symfony/phpstan-baseline.neon.bak
+symfony/var/coverage/
+
+# -------------------------------------------------------------
+# PHPUnit  rapport local non partagé
+# -------------------------------------------------------------
+symfony/phpunit.xml
+!symfony/phpunit.xml.dist
+
+# -------------------------------------------------------------
+# Doctrine  caches & SQLite local éventuel
+# -------------------------------------------------------------
+symfony/var/data.db
+symfony/var/*.sqlite
+
+# -------------------------------------------------------------
+# Frontend 
+# -------------------------------------------------------------
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/coverage/
+frontend/.env
+frontend/.env.*.local
+frontend/.env.production
+frontend/.env.local
+
+# Lock file npm versionné (package-lock.json) — yarn/pnpm exclus
+frontend/yarn.lock
+frontend/pnpm-lock.yaml
+# -------------------------------------------------------------
+# Docker données locales, logs
+# -------------------------------------------------------------
+docker/data/
+docker/**/logs/
+docker-compose.override.yml
+
+# -------------------------------------------------------------
+# Production secrets  JAMAIS dans git
+# -------------------------------------------------------------
+symfony/.env.prod
+nginx/ssl/
+/var/backups/
+
+# -------------------------------------------------------------
+# JWT / Clés — ne JAMAIS versionner les clés privées
+# (on livrera un script de génération à l'étape sécurité)
+# -------------------------------------------------------------
+symfony/config/jwt/*.pem
+symfony/config/jwt/*.key
+
+# -------------------------------------------------------------
+# IDE & éditeurs
+# -------------------------------------------------------------
+.idea/
+.vscode/
+!.vscode/settings.json.example
+!.vscode/extensions.json
+*.iml
+*.swp
+*.swo
+*~
+.nova/
+.fleet/
+
+# -------------------------------------------------------------
+# OS
+# -------------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# -------------------------------------------------------------
+# Logs & divers
+# -------------------------------------------------------------
+*.log
+*.pid
+*.seed
+*.pid.lock
+.history/
+.tmp/
+.claude/
+/vendor/

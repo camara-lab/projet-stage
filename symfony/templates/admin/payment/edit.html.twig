@@ -1,0 +1,82 @@
+{% extends 'base.html.twig' %}
+{% block title %}Modifier paiement #{{ payment.id }}{% endblock %}
+{% block page_title %}Modifier le paiement #{{ payment.id }}{% endblock %}
+
+{% block body %}
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start">
+
+    {# ── Formulaire d'édition ── #}
+    <div class="section-card">
+        <div class="section-header">
+            <h6 class="section-title">
+                <i class="ti ti-edit" style="color:var(--accent-blue)"></i> Modifier le paiement
+            </h6>
+        </div>
+        <div style="padding:20px">
+            {{ form_start(form) }}
+
+            <div style="margin-bottom:16px">
+                {{ form_label(form.paymentStatus, null, {label_attr: {style: 'display:block;font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:5px'}}) }}
+                {{ form_widget(form.paymentStatus) }}
+                {{ form_errors(form.paymentStatus) }}
+                <p style="font-size:11px;color:var(--text-muted);margin-top:4px">
+                    ⚠️ Passer à <strong>REMBOURSÉ</strong> annulera automatiquement la réservation liée.<br>
+                    Passer à <strong>COMPLÉTÉ</strong> marquera automatiquement la réservation comme payée.
+                </p>
+            </div>
+
+            <div style="margin-bottom:20px">
+                {{ form_label(form.transactionId, null, {label_attr: {style: 'display:block;font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:5px'}}) }}
+                {{ form_widget(form.transactionId) }}
+                {{ form_errors(form.transactionId) }}
+                <p style="font-size:11px;color:var(--text-muted);margin-top:4px">Laisser vide pour conserver l'ID actuel.</p>
+            </div>
+
+            <div style="display:flex;gap:10px">
+                <button type="submit"
+                        style="padding:10px 20px;background:var(--accent-blue);color:#fff;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)">
+                    <i class="ti ti-device-floppy me-1"></i> Enregistrer
+                </button>
+                <a href="{{ path('admin_payment_show', {id: payment.id}) }}"
+                   style="padding:10px 18px;border:1px solid var(--card-border);color:var(--text-secondary);border-radius:var(--radius-sm);font-size:13px;font-weight:500;text-decoration:none;display:inline-flex;align-items:center;gap:5px">
+                    <i class="ti ti-x"></i> Annuler
+                </a>
+            </div>
+
+            {{ form_end(form) }}
+        </div>
+    </div>
+
+    {# ── Récapitulatif du paiement actuel ── #}
+    <div class="section-card">
+        <div class="section-header">
+            <h6 class="section-title">
+                <i class="ti ti-info-circle" style="color:var(--text-muted)"></i> État actuel
+            </h6>
+        </div>
+        <div style="padding:0">
+            {% set st = payment.paymentStatus|lower %}
+            {% set rows = [
+                {label: 'Statut actuel',    value: payment.paymentStatus},
+                {label: 'Montant',          value: payment.amount|number_format(2, ',', ' ') ~ ' DH'},
+                {label: 'Méthode',          value: payment.paymentMethod},
+                {label: 'Fournisseur',      value: payment.paymentProvider},
+                {label: 'ID transaction',   value: payment.transactionId ?? '—'},
+                {label: 'Passager',         value: payment.booking.user.fullName},
+                {label: 'Trajet',           value: payment.booking.trip.route.departureCity.name ~ ' → ' ~ payment.booking.trip.route.arrivalCity.name},
+                {label: 'Réservation',      value: '#' ~ payment.booking.id ~ ' (' ~ payment.booking.status ~ ')'},
+                {label: 'Date paiement',    value: payment.paymentDate|date('d/m/Y H:i:s')},
+            ] %}
+            {% for row in rows %}
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 18px;border-bottom:1px solid #f1f5f9">
+                <span style="font-size:12px;color:var(--text-secondary)">{{ row.label }}</span>
+                <span style="font-size:12px;font-weight:600;color:var(--text-primary)">{{ row.value }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

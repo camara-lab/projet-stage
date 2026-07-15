@@ -1,0 +1,122 @@
+###############################################################################
+# BusGo — Stack production complète
+#
+# Services :
+#   nginx     — reverse proxy HTTPS, SSL Let's Encrypt
+#   frontend  — Next.js standalone (port interne 3000)
+#   symfony   — PHP 8.3 FPM (FastCGI port 9000)
+#   database  — MySQL 8
+#
+# Avant de démarrer :
+#   1. cp symfony/.env.prod.dist symfony/.env.prod && nano symfony/.env.prod
+#   2. php bin/console lexik:jwt:generate-keypair --env=prod   (dans le conteneur)
+#   3. docker compose -f docker-compose.prod.yml up -d
+###############################################################################
+
+services:
+
+  # ─── Nginx — point d'entrée unique ───────────────────────────────────────
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - symfony_public:/var/www/symfony/public:ro
+      - certbot_www:/var/www/certbot:ro
+      - certbot_conf:/etc/letsencrypt:ro
+    depends_on:
+      - symfony
+      - frontend
+    networks:
+      - busgo_net
+
+  # ─── Next.js frontend ────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        API_URL: http://symfony
+        NEXT_PUBLIC_APP_URL: https://busgo.ma
+    restart: unless-stopped
+    environment:
+      API_URL: http://symfony
+      NEXT_PUBLIC_APP_URL: https://busgo.ma
+    expose:
+      - "3000"
+    depends_on:
+      - symfony
+    networks:
+      - busgo_net
+
+  # ─── Symfony PHP-FPM ─────────────────────────────────────────────────────
+  symfony:
+    build:
+      context: ./symfony
+      dockerfile: Dockerfile
+      target: production
+    restart: unless-stopped
+    env_file:
+      - ./symfony/.env.prod
+    volumes:
+      - symfony_public:/var/www/symfony/public
+      - symfony_var:/var/www/symfony/var
+      - ./symfony/config/jwt:/var/www/symfony/config/jwt:ro
+    expose:
+      - "9000"
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - busgo_net
+
+  # ─── MySQL 8 ─────────────────────────────────────────────────────────────
+  database:
+    image: mysql:8.0
+    restart: unless-stopped
+    env_file:
+      - ./symfony/.env.prod
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    expose:
+      - "3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - busgo_net
+
+  # ─── Certbot (renouvellement SSL automatique) ─────────────────────────────
+  certbot:
+    image: certbot/certbot:latest
+    restart: unless-stopped
+    volumes:
+      - certbot_www:/var/www/certbot
+      - certbot_conf:/etc/letsencrypt
+    entrypoint: /bin/sh -c 'trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h & wait $${!}; done'
+
+# ─── Volumes persistants ──────────────────────────────────────────────────
+volumes:
+  mysql_data:
+    driver: local
+  symfony_public:
+    driver: local
+  symfony_var:
+    driver: local
+  certbot_www:
+    driver: local
+  certbot_conf:
+    driver: local
+
+# ─── Réseau interne ───────────────────────────────────────────────────────
+networks:
+  busgo_net:
+    driver: bridge

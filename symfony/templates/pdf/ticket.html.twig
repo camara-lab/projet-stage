@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Billet #{{ booking.id }}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: DejaVu Sans, Arial, sans-serif;
+            font-size: 12px;
+            color: #1e293b;
+            background: #fff;
+        }
+
+        /* ── En-tête ── */
+        .header {
+            background: #1e40af;
+            color: #fff;
+            padding: 20px 28px;
+            display: block;
+        }
+        .header-inner {
+            width: 100%;
+        }
+        .company-name {
+            font-size: 22px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        .company-sub {
+            font-size: 11px;
+            color: #bfdbfe;
+            margin-top: 2px;
+        }
+        .ticket-label {
+            font-size: 13px;
+            color: #bfdbfe;
+            text-align: right;
+        }
+        .ticket-id {
+            font-size: 26px;
+            font-weight: bold;
+            color: #fff;
+            text-align: right;
+        }
+
+        /* ── Ligne de séparation décorée ── */
+        .divider {
+            border: none;
+            border-top: 3px solid #3b82f6;
+            margin: 0;
+        }
+
+        /* ── Corps ── */
+        .body { padding: 24px 28px; }
+
+        /* ── Route principale ── */
+        .route-box {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            padding: 18px 22px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .route-cities {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1e3a8a;
+        }
+        .route-arrow {
+            color: #3b82f6;
+            margin: 0 10px;
+        }
+        .route-date {
+            font-size: 13px;
+            color: #64748b;
+            margin-top: 6px;
+        }
+
+        /* ── Grille de détails ── */
+        .details-grid {
+            width: 100%;
+            margin-bottom: 20px;
+            border-collapse: collapse;
+        }
+        .detail-cell {
+            width: 33%;
+            padding: 10px 14px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            vertical-align: top;
+        }
+        .detail-label {
+            font-size: 10px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: block;
+            margin-bottom: 4px;
+        }
+        .detail-value {
+            font-size: 14px;
+            font-weight: bold;
+            color: #1e293b;
+        }
+
+        /* ── Passager ── */
+        .passenger-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 14px 18px;
+            margin-bottom: 20px;
+        }
+        .passenger-title {
+            font-size: 10px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+        .passenger-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: #1e293b;
+        }
+        .passenger-email {
+            font-size: 11px;
+            color: #64748b;
+            margin-top: 2px;
+        }
+
+        /* ── Paiement ── */
+        .payment-box {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 6px;
+            padding: 14px 18px;
+            margin-bottom: 20px;
+        }
+        .payment-title {
+            font-size: 10px;
+            color: #16a34a;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+        .payment-amount {
+            font-size: 22px;
+            font-weight: bold;
+            color: #15803d;
+        }
+        .payment-method {
+            font-size: 11px;
+            color: #16a34a;
+            margin-top: 2px;
+        }
+
+        /* ── Statut badge ── */
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .status-paid     { background: #dcfce7; color: #15803d; }
+        .status-pending  { background: #fef9c3; color: #a16207; }
+        .status-cancelled{ background: #fee2e2; color: #b91c1c; }
+        .status-refunded { background: #f3e8ff; color: #7e22ce; }
+
+        /* ── QR / Code billet ── */
+        .barcode-box {
+            text-align: center;
+            border: 1px dashed #cbd5e1;
+            border-radius: 6px;
+            padding: 14px;
+            margin-bottom: 20px;
+        }
+        .barcode-text {
+            font-family: "Courier New", monospace;
+            font-size: 14px;
+            font-weight: bold;
+            color: #334155;
+            letter-spacing: 3px;
+        }
+        .barcode-label {
+            font-size: 10px;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+
+        /* ── Pied de page ── */
+        .footer {
+            border-top: 1px solid #e2e8f0;
+            padding: 14px 28px;
+            font-size: 10px;
+            color: #94a3b8;
+            text-align: center;
+        }
+        .footer strong {
+            color: #64748b;
+        }
+
+        /* ── Utilitaires ── */
+        .table-full { width: 100%; border-collapse: collapse; }
+        .align-right { text-align: right; }
+        .mt-4 { margin-top: 4px; }
+    </style>
+</head>
+<body>
+
+<!-- ── En-tête ── -->
+<div class="header">
+    <table class="table-full">
+        <tr>
+            <td>
+                <div class="company-name">🚌 BUS BOOKING</div>
+                <div class="company-sub">Réservation de billets inter-villes</div>
+            </td>
+            <td class="align-right">
+                <div class="ticket-label">BILLET N°</div>
+                <div class="ticket-id">#{{ '%05d'|format(booking.id) }}</div>
+            </td>
+        </tr>
+    </table>
+</div>
+<hr class="divider">
+
+<div class="body">
+
+    <!-- ── Trajet principal ── -->
+    <div class="route-box">
+        <div class="route-cities">
+            {{ booking.trip.route.departureCity.name }}
+            <span class="route-arrow">→</span>
+            {{ booking.trip.route.arrivalCity.name }}
+        </div>
+        <div class="route-date">
+            Départ le {{ booking.trip.departureTime|date('d/m/Y à H:i') }}
+            &nbsp;·&nbsp;
+            Arrivée le {{ booking.trip.arrivalTime|date('d/m/Y à H:i') }}
+        </div>
+    </div>
+
+    <!-- ── Grille de détails ── -->
+    <table class="details-grid">
+        <tr>
+            <td class="detail-cell">
+                <span class="detail-label">Siège</span>
+                <span class="detail-value">N° {{ booking.seatNumber }}</span>
+            </td>
+            <td class="detail-cell">
+                <span class="detail-label">Bus</span>
+                <span class="detail-value">{{ booking.trip.bus.plateNumber }}</span>
+            </td>
+            <td class="detail-cell">
+                <span class="detail-label">Statut réservation</span>
+                <span class="detail-value">
+                    {% set st = booking.status|lower %}
+                    {% if st == 'paid' %}
+                        <span class="status-badge status-paid">PAYÉE</span>
+                    {% elseif st == 'pending' %}
+                        <span class="status-badge status-pending">EN ATTENTE</span>
+                    {% elseif st == 'cancelled' %}
+                        <span class="status-badge status-cancelled">ANNULÉE</span>
+                    {% else %}
+                        <span class="status-badge status-refunded">{{ booking.status }}</span>
+                    {% endif %}
+                </span>
+            </td>
+        </tr>
+    </table>
+
+    <!-- ── Passager ── -->
+    <div class="passenger-box">
+        <div class="passenger-title">Passager</div>
+        <div class="passenger-name">{{ booking.user.fullName }}</div>
+        <div class="passenger-email">{{ booking.user.email }}
+            {% if booking.user.phone %} · {{ booking.user.phone }}{% endif %}
+        </div>
+    </div>
+
+    <!-- ── Paiement ── -->
+    {% if booking.payment %}
+    <div class="payment-box">
+        <div class="payment-title">Paiement</div>
+        <table class="table-full">
+            <tr>
+                <td>
+                    <div class="payment-amount">{{ booking.payment.amount|number_format(2, ',', ' ') }} DH</div>
+                    <div class="payment-method">{{ booking.payment.paymentMethod }}
+                        {% if booking.payment.transactionId %}
+                            · Réf. {{ booking.payment.transactionId }}
+                        {% endif %}
+                    </div>
+                </td>
+                <td class="align-right">
+                    <span class="detail-label">Date de paiement</span><br>
+                    <strong>{{ booking.payment.paymentDate|date('d/m/Y H:i') }}</strong>
+                </td>
+            </tr>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- ── Code billet ── -->
+    <div class="barcode-box">
+        <div class="barcode-label">CODE BILLET</div>
+        <div class="barcode-text">
+            BKG-{{ '%05d'|format(booking.id) }}-{{ booking.trip.id }}-{{ booking.seatNumber }}
+        </div>
+        <div class="barcode-label">Présentez ce code au contrôleur</div>
+    </div>
+
+</div>
+
+<!-- ── Pied de page ── -->
+<div class="footer">
+    <strong>Bus Booking</strong> — Billet généré le {{ "now"|date("d/m/Y à H:i") }}
+    &nbsp;·&nbsp; Ce billet est nominatif et non cessible
+    &nbsp;·&nbsp; Conservez-le jusqu'à destination
+</div>
+
+</body>
+</html>

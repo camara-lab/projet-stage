@@ -1,0 +1,335 @@
+{% extends 'base.html.twig' %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Vue d'ensemble{% endblock %}
+
+{% block body %}
+
+{# ══════════════════════════════════════════════════════════
+   KPI CARDS — 4 colonnes
+══════════════════════════════════════════════════════════ #}
+<div class="kpi-grid">
+
+    {# Chiffre d'affaires #}
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Chiffre d'affaires</span>
+            <div class="kpi-icon-circle kpi-icon-green">
+                <i class="ti ti-cash"></i>
+            </div>
+        </div>
+        <div class="kpi-value">{{ ca|number_format(0, ',', ' ') }} <span class="kpi-unit">DH</span></div>
+        <div class="kpi-sub">Paiements complétés</div>
+    </div>
+
+    {# Taux d'occupation #}
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Taux d'occupation</span>
+            <div class="kpi-icon-circle kpi-icon-blue">
+                <i class="ti ti-chart-bar"></i>
+            </div>
+        </div>
+        <div class="kpi-value">{{ occupation|number_format(1) }} <span class="kpi-unit">%</span></div>
+        <div class="kpi-progress">
+            <div class="kpi-progress-fill" style="width:{{ min(occupation, 100) }}%"></div>
+        </div>
+    </div>
+
+    {# Passagers actifs #}
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Passagers actifs</span>
+            <div class="kpi-icon-circle kpi-icon-purple">
+                <i class="ti ti-users"></i>
+            </div>
+        </div>
+        <div class="kpi-value">{{ passagersActifs }}</div>
+        <div class="kpi-sub">Avec réservation active</div>
+    </div>
+
+    {# Trajets cette semaine #}
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Trajets (7 jours)</span>
+            <div class="kpi-icon-circle kpi-icon-orange">
+                <i class="ti ti-calendar-event"></i>
+            </div>
+        </div>
+        <div class="kpi-value">{{ trajetsASemaine }}</div>
+        <div class="kpi-sub">À venir cette semaine</div>
+    </div>
+
+</div>
+
+{# ══════════════════════════════════════════════════════════
+   COMPTEURS ENTITÉS — 5 colonnes cliquables
+══════════════════════════════════════════════════════════ #}
+<div class="entity-grid">
+    <a href="{{ path('admin_city_index') }}" class="entity-card">
+        <span class="entity-card-icon" style="color:#6366f1"><i class="ti ti-map-pin"></i></span>
+        <span class="entity-card-num">{{ nbVilles }}</span>
+        <span class="entity-card-label">Villes</span>
+    </a>
+    <a href="{{ path('admin_bus_index') }}" class="entity-card">
+        <span class="entity-card-icon" style="color:#0ea5e9"><i class="ti ti-bus"></i></span>
+        <span class="entity-card-num">{{ nbBus }}</span>
+        <span class="entity-card-label">Bus</span>
+    </a>
+    <a href="{{ path('admin_route_index') }}" class="entity-card">
+        <span class="entity-card-icon" style="color:#14b8a6"><i class="ti ti-route"></i></span>
+        <span class="entity-card-num">{{ nbLignes }}</span>
+        <span class="entity-card-label">Lignes</span>
+    </a>
+    <a href="{{ path('admin_trip_index') }}" class="entity-card">
+        <span class="entity-card-icon" style="color:#f59e0b"><i class="ti ti-calendar-week"></i></span>
+        <span class="entity-card-num">{{ nbTrajets }}</span>
+        <span class="entity-card-label">Trajets total</span>
+    </a>
+    <a href="{{ path('admin_booking_index') }}" class="entity-card">
+        <span class="entity-card-icon" style="color:#10b981"><i class="ti ti-ticket"></i></span>
+        <span class="entity-card-num">{{ nbResa }}</span>
+        <span class="entity-card-label">Réservations</span>
+    </a>
+</div>
+
+{# ══════════════════════════════════════════════════════════
+   GRAPHIQUES — CA mensuel + Donut statuts
+══════════════════════════════════════════════════════════ #}
+<div class="charts-row">
+
+    {# Graphique revenus mensuels #}
+    <div class="chart-card">
+        <div class="card-title-row">
+            <span class="card-title"><i class="ti ti-chart-bar" style="color:var(--accent-blue)"></i> Revenus des 6 derniers mois</span>
+        </div>
+        <canvas id="chartCA" height="130"></canvas>
+    </div>
+
+    {# Donut statuts réservations #}
+    <div class="chart-card">
+        <div class="card-title-row">
+            <span class="card-title"><i class="ti ti-chart-donut" style="color:var(--accent-green)"></i> Statuts des réservations</span>
+        </div>
+        <div class="donut-wrapper">
+            <canvas id="chartStatuts" style="max-height:180px; max-width:180px"></canvas>
+            <div class="donut-center">
+                <span class="donut-total">{{ nbResa }}</span>
+                <span class="donut-label-txt">réservations</span>
+            </div>
+        </div>
+        <div class="donut-legend">
+            <div class="donut-legend-item"><div class="donut-legend-dot" style="background:#f59e0b"></div> En attente</div>
+            <div class="donut-legend-item"><div class="donut-legend-dot" style="background:#10b981"></div> Payées</div>
+            <div class="donut-legend-item"><div class="donut-legend-dot" style="background:#ef4444"></div> Annulées</div>
+            <div class="donut-legend-item"><div class="donut-legend-dot" style="background:#8b5cf6"></div> Remboursées</div>
+        </div>
+    </div>
+
+</div>
+
+{# ══════════════════════════════════════════════════════════
+   ACTIVITÉ RÉCENTE + TOP LIGNES + ACTIONS RAPIDES
+══════════════════════════════════════════════════════════ #}
+<div class="bottom-row">
+
+    {# Dernières réservations #}
+    <div class="section-card">
+        <div class="section-header">
+            <h6 class="section-title"><i class="ti ti-clock-hour-4" style="color:var(--accent-blue)"></i> Activité récente</h6>
+            <a href="{{ path('admin_booking_index') }}" class="card-action">Voir tout →</a>
+        </div>
+        <table class="activity-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Passager</th>
+                    <th>Trajet</th>
+                    <th>Siège</th>
+                    <th>Statut</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in dernieresResas %}
+                <tr>
+                    <td class="text-muted" style="font-size:11px">{{ r.id }}</td>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:8px">
+                            <div class="avatar-circle">{{ r.full_name|slice(0,1)|upper }}</div>
+                            <div>
+                                <div style="font-size:12px;font-weight:600">{{ r.full_name }}</div>
+                                <div style="font-size:10.5px;color:var(--text-muted)">{{ r.email }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td style="font-size:12px">{{ r.ville_depart }} → {{ r.ville_arrivee }}</td>
+                    <td><span class="seat-badge">{{ r.seat_number }}</span></td>
+                    <td><span class="badge-pill badge-{{ r.status|lower }}">{{ r.status }}</span></td>
+                    <td style="font-size:11px;color:var(--text-muted)">{{ r.created_at|date('d/m H:i') }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px">
+                        Aucune réservation.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {# Colonne droite : Top lignes + Actions rapides #}
+    <div style="display:flex;flex-direction:column;gap:16px">
+
+        {# Top 3 lignes #}
+        <div class="section-card">
+            <div class="section-header">
+                <h6 class="section-title"><i class="ti ti-trophy" style="color:var(--accent-orange)"></i> Top lignes</h6>
+            </div>
+            {% if topLignes %}
+                {% set maxVal = topLignes[0].nbReservations %}
+                {% for i, ligne in topLignes %}
+                <div class="top-route-item">
+                    <div class="top-route-meta">
+                        <span class="top-route-name">
+                            <span class="rank-badge rank-{{ i+1 }}">{{ i+1 }}</span>
+                            {{ ligne.ligne }}
+                        </span>
+                        <span class="top-route-count">{{ ligne.nbReservations }} rés.</span>
+                    </div>
+                    <div class="top-route-bar">
+                        <div class="top-route-fill fill-{{ i+1 }}"
+                             style="width:{{ maxVal > 0 ? (ligne.nbReservations / maxVal * 100)|round : 0 }}%">
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div style="padding:16px 18px;font-size:12px;color:var(--text-muted)">Aucune donnée disponible.</div>
+            {% endif %}
+        </div>
+
+        {# Actions rapides #}
+        <div class="section-card">
+            <div class="section-header">
+                <h6 class="section-title"><i class="ti ti-bolt" style="color:var(--accent-orange)"></i> Actions rapides</h6>
+            </div>
+            <div class="quick-actions-body">
+                <a href="{{ path('admin_city_new') }}" class="quick-action-btn">
+                    <i class="ti ti-plus" style="color:var(--accent-blue)"></i> Ajouter une ville
+                </a>
+                <a href="{{ path('admin_bus_new') }}" class="quick-action-btn">
+                    <i class="ti ti-plus" style="color:var(--accent-blue)"></i> Enregistrer un bus
+                </a>
+                <a href="{{ path('admin_route_new') }}" class="quick-action-btn">
+                    <i class="ti ti-plus" style="color:var(--accent-blue)"></i> Créer une ligne
+                </a>
+                <a href="{{ path('admin_trip_new') }}" class="quick-action-btn" style="border-color:var(--accent-green)">
+                    <i class="ti ti-calendar-plus" style="color:var(--accent-green)"></i> Planifier un trajet
+                </a>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block javascripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+Chart.defaults.font.size   = 12;
+
+/* ── Graphique CA mensuel ── */
+const caRawLabels = {{ caLabels|raw }};
+const caRawData   = {{ caData|raw }};
+
+const caLabels = caRawLabels.map(m => {
+    const [y, mo] = m.split('-');
+    return new Date(y, mo - 1).toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' });
+});
+
+/* Couleur : bleu si valeur > 0 ET dernier mois, gris sinon */
+const maxVal = Math.max(...caRawData);
+const barColors = caRawData.map((v, i) =>
+    v > 0 ? (i === caRawData.length - 1 ? '#3b82f6' : '#93c5fd') : '#e2e8f0'
+);
+
+new Chart(document.getElementById('chartCA'), {
+    type: 'bar',
+    data: {
+        labels: caLabels,
+        datasets: [{
+            label: 'Revenus (DH)',
+            data: caRawData,
+            backgroundColor: barColors,
+            borderRadius: 7,
+            borderSkipped: false,
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                callbacks: {
+                    label: ctx => '  ' + ctx.raw.toLocaleString('fr-FR') + ' DH'
+                }
+            }
+        },
+        scales: {
+            x: {
+                grid: { display: false },
+                border: { display: false }
+            },
+            y: {
+                min: 0,
+                max: maxVal > 0 ? Math.ceil(maxVal * 1.6) : 500,
+                grid: { color: '#f1f5f9' },
+                border: { display: false },
+                ticks: {
+                    callback: v => v.toLocaleString('fr-FR') + ' DH'
+                }
+            }
+        }
+    }
+});
+
+/* ── Donut statuts réservations ── */
+const statutLabels = {{ statutLabels|raw }};
+const statutData   = {{ statutData|raw }};
+const colorMap = {
+    PENDING:   '#f59e0b',
+    PAID:      '#10b981',
+    CANCELLED: '#ef4444',
+    REFUNDED:  '#8b5cf6'
+};
+
+new Chart(document.getElementById('chartStatuts'), {
+    type: 'doughnut',
+    data: {
+        labels: statutLabels,
+        datasets: [{
+            data: statutData,
+            backgroundColor: statutLabels.map(l => colorMap[l] || '#d1d5db'),
+            borderWidth: 0,
+            hoverOffset: 6,
+        }]
+    },
+    options: {
+        responsive: true,
+        cutout: '68%',
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                callbacks: {
+                    label: ctx => '  ' + ctx.label + ' : ' + ctx.raw
+                }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,19 @@
+framework:
+    rate_limiter:
+        # Limite pour POST /api/auth/login : 5 tentatives / minute par IP
+        api_login:
+            policy: fixed_window
+            limit: 5
+            interval: '1 minute'
+
+        # Limite pour POST /api/auth/register : 3 inscriptions / heure par IP
+        api_register:
+            policy: fixed_window
+            limit: 3
+            interval: '1 hour'
+
+        # Limite pour POST /api/auth/refresh : 30 renouvellements / heure par IP
+        api_refresh:
+            policy: fixed_window
+            limit: 30
+            interval: '1 hour'
