@@ -361,7 +361,7 @@ function BookingContent() {
             <div className="card">
               <h2 className="text-lg font-black text-gray-900 mb-0.5">
                 {isRoundTrip
-                  ? (step === 1 ? 'Étape 1 — Sièges aller' : 'Étape 2 — Sièges retour')
+                  ? (step === 1 ? 'Étape 1 : Sièges aller' : 'Étape 2 : Sièges retour')
                   : 'Choisissez vos sièges'}
               </h2>
               {activeTrip && (

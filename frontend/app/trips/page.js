@@ -525,7 +525,7 @@ function TripsContent() {
         {!loading && trips.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 mb-5">
             <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mr-1">
-              {isRoundTrip ? 'Étape 1 — Trier par' : 'Trier par'}
+              {isRoundTrip ? 'Étape 1 : Trier par' : 'Trier par'}
             </span>
             {SORTS.map(({ key, label }) => (
               <button
@@ -651,7 +651,7 @@ function TripsContent() {
               </button>
             </div>
 
-            <h2 className="text-xl font-bold text-gray-900 mb-1">Étape 2 — Choisissez votre trajet retour</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-1">Étape 2 : Choisissez votre trajet retour</h2>
             <p className="text-gray-500 text-sm mb-6">
               {to} → {from}
               {search.returnDate
