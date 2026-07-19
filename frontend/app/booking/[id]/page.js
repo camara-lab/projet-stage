@@ -8,7 +8,7 @@ import { normalizePassengers } from '@/lib/passengers'
 import { getBasePrice } from '@/lib/trips'
 import toast from 'react-hot-toast'
 
-// Premiers `adults` sièges → ADULT, le reste → CHILD
+// Premiers `adults` sièges  ADULT, le reste CHILD
 function autoAssign(seats, adults) {
   const result = {}
   seats.forEach((s, i) => {
@@ -198,7 +198,7 @@ function BookingContent() {
   )
   if (!trip) return null
 
-  // ── Valeurs dérivées — aller ──
+  // ── Valeurs dérivées aller ──
   const dep         = new Date(trip.heureDepart)
   const arr         = new Date(trip.heureArrivee)
   const totalSeats  = trip.capaciteBus || 40
@@ -216,7 +216,7 @@ function BookingContent() {
     (seats.length === requiredSeats && assignedAdults === adults && assignedChildren === children)
   const canBook = seats.length === requiredSeats && assignmentComplete && !booking
 
-  // ── Valeurs dérivées — retour ──
+  // aleurs dérivées — retour 
   const retDep               = returnTrip ? new Date(returnTrip.heureDepart) : null
   const retArr               = returnTrip ? new Date(returnTrip.heureArrivee) : null
   const retTotalSeats        = returnTrip?.capaciteBus || 40
@@ -231,7 +231,7 @@ function BookingContent() {
     (returnSeats.length === requiredSeats && retAssignedAdults === adults && retAssignedChildren === children)
   const canReturnBook = returnSeats.length === requiredSeats && retAssignComplete && !booking
 
-  // ── Label du bouton ──
+  // Label du bouton 
   const btnLabel = (() => {
     if (booking) return 'Réservation en cours...'
     if (step === 1) {
@@ -393,12 +393,12 @@ function BookingContent() {
                 )}
                 {children > 0 && (
                   <span className="text-xs bg-sky-50 text-sky-600 font-semibold px-2.5 py-1 rounded-full">
-                    🧒 {children} enfant{children > 1 ? 's' : ''} · siège requis
+                     {children} enfant{children > 1 ? 's' : ''} · siège requis
                   </span>
                 )}
                 {babies > 0 && (
                   <span className="text-xs bg-green-50 text-brand-green font-semibold px-2.5 py-1 rounded-full">
-                    👶 {babies} bébé{babies > 1 ? 's' : ''} · sur les genoux · gratuit
+                    {babies} bébé{babies > 1 ? 's' : ''} · sur les genoux · gratuit
                   </span>
                 )}
               </div>
@@ -589,7 +589,7 @@ function BookingContent() {
                             ${activeAssignments[s] === 'CHILD'
                               ? 'bg-sky-400 border-sky-500 text-white'
                               : 'bg-white border-gray-200 text-gray-500 hover:border-sky-400'}`}>
-                          🧒 Enfant −25%
+                           Enfant −25%
                         </button>
                       </div>
                     </div>
@@ -598,7 +598,7 @@ function BookingContent() {
 
                 {activeSeats.length === requiredSeats && !activeAssignDone && (
                   <p className="mt-2 text-xs text-amber-600 font-medium">
-                    ⚠ Il manque {adults - activeAssignedA > 0
+                     Il manque {adults - activeAssignedA > 0
                       ? `${adults - activeAssignedA} adulte${adults - activeAssignedA > 1 ? 's' : ''}`
                       : `${children - activeAssignedC} enfant${children - activeAssignedC > 1 ? 's' : ''}`}.
                   </p>

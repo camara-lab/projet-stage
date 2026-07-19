@@ -9,6 +9,7 @@ import { TripsListSkeleton } from '@/components/Skeleton'
 import PassengerSelector, { calcTotalPrice } from '@/components/PassengerSelector'
 import { normalizePassengers } from '@/lib/passengers'
 import { getBasePrice } from '@/lib/trips'
+import { saveRecentSearch } from '@/lib/recentSearches'
 
 const POPULAR_ROUTES = [
   { from: 'Casablanca', to: 'Marrakech' },
@@ -113,11 +114,38 @@ function TripCard({ trip, onBook, passengers, isSelected, buttonLabel }) {
   const multiPax   = (passengers.adults + passengers.children + passengers.babies) > 1
   const childPrice = +(basePrice * 0.75).toFixed(2)
 
+  const busType = trip.capaciteBus >= 50 ? 'Grand Confort'
+                : trip.capaciteBus >= 40 ? 'Confort'
+                : 'Standard'
+
   return (
     <div className={`card hover:shadow-lg transition-all border-2
       ${isSelected
         ? 'border-brand-green bg-green-50'
         : 'border-transparent hover:border-brand-green'}`}>
+
+      {/* En-tête : compagnie, type de bus, équipements */}
+      <div className="flex flex-wrap items-center justify-between gap-2 pb-3 mb-4 border-b border-gray-100">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <span className="w-7 h-7 rounded-lg bg-brand-dark text-white flex items-center justify-center text-sm">🚌</span>
+            <span className="font-black text-sm text-brand-dark">Bus<span className="text-brand-green">Go</span></span>
+          </div>
+          <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full">
+            {busType} · {trip.capaciteBus} places
+          </span>
+          <span className="text-xs font-semibold text-brand-green bg-green-50 border border-green-100 px-2.5 py-1 rounded-full">
+            Trajet direct
+          </span>
+        </div>
+        <div className="flex items-center gap-3 text-xs text-gray-400 font-medium">
+          <span title="Wi-Fi à bord">📶 Wi-Fi</span>
+          <span title="Climatisation">❄️ Clim</span>
+          <span title="Prises USB">🔌 USB</span>
+          <span title="1 bagage en soute inclus">🧳 1 bagage</span>
+        </div>
+      </div>
+
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
 
         <div className="flex items-center gap-6 flex-1">
@@ -134,7 +162,6 @@ function TripCard({ trip, onBook, passengers, isSelected, buttonLabel }) {
               <div className="flex-1 h-0.5 bg-gray-200"></div>
               <div className="w-2 h-2 rounded-full bg-red-400 flex-shrink-0"></div>
             </div>
-            <div className="text-xs text-gray-400">Direct</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-black text-gray-900">
@@ -145,9 +172,9 @@ function TripCard({ trip, onBook, passengers, isSelected, buttonLabel }) {
         </div>
 
         <div className="flex flex-wrap gap-2 md:w-48">
-          <span className="badge-green">🚌 {trip.capaciteBus} places</span>
+          {dispo > 5 && <span className="badge-green">{dispo} places disponibles</span>}
           {dispo <= 5 && dispo > 0 && (
-            <span className="badge-yellow"> {dispo} places restantes</span>
+            <span className="badge-yellow">Plus que {dispo} places</span>
           )}
           {dispo === 0 && <span className="badge-red">Complet</span>}
         </div>
@@ -278,6 +305,7 @@ function TripsContent() {
       toast.error('Sélectionnez une date de retour')
       return
     }
+    saveRecentSearch({ from: search.from, to: search.to, date: search.date })
     const { adults, children, babies } = passengers
     let url = `/trips?from=${encodeURIComponent(search.from)}&to=${encodeURIComponent(search.to)}&date=${search.date}`
       + `&adults=${adults}&children=${children}&babies=${babies}`
@@ -377,41 +405,47 @@ function TripsContent() {
           </div>
 
           <form onSubmit={handleSearch}
-            className="flex flex-col md:flex-row gap-3 bg-white rounded-2xl p-3">
-            <input
-              type="text"
-              list="trips-cities-from"
-              placeholder="🟢 Départ (ex: Casablanca)"
-              value={search.from}
-              onChange={(e) => setSearch({ ...search, from: e.target.value })}
-              className="input-field flex-1"
-              autoComplete="off"
-            />
+            className="flex flex-col md:flex-row gap-3 bg-white rounded-2xl p-4 shadow-xl">
+            <div className="relative flex-1">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl pointer-events-none">🟢</span>
+              <input
+                type="text"
+                list="trips-cities-from"
+                placeholder="Départ (ex: Casablanca)"
+                value={search.from}
+                onChange={(e) => setSearch({ ...search, from: e.target.value })}
+                className="input-field-lg pl-12"
+                autoComplete="off"
+              />
+            </div>
             <datalist id="trips-cities-from">
               {cities.map((c) => <option key={c.id} value={c.name} />)}
             </datalist>
-            <input
-              type="text"
-              list="trips-cities-to"
-              placeholder="🔴 Arrivée (ex: Marrakech)"
-              value={search.to}
-              onChange={(e) => setSearch({ ...search, to: e.target.value })}
-              className="input-field flex-1"
-              autoComplete="off"
-            />
+            <div className="relative flex-1">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl pointer-events-none">🔴</span>
+              <input
+                type="text"
+                list="trips-cities-to"
+                placeholder="Arrivée (ex: Marrakech)"
+                value={search.to}
+                onChange={(e) => setSearch({ ...search, to: e.target.value })}
+                className="input-field-lg pl-12"
+                autoComplete="off"
+              />
+            </div>
             <datalist id="trips-cities-to">
               {cities.map((c) => <option key={c.id} value={c.name} />)}
             </datalist>
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <input type="date" value={search.date} min={today}
                 onChange={(e) => setSearch({ ...search, date: e.target.value })}
-                className="input-field md:w-40"
+                className="input-field-lg md:w-44"
               />
               {isRoundTrip && (
                 <input type="date" value={search.returnDate}
                   min={search.date || today}
                   onChange={(e) => setSearch({ ...search, returnDate: e.target.value })}
-                  className="input-field md:w-40"
+                  className="input-field-lg md:w-44"
                   placeholder="Date retour"
                 />
               )}
@@ -419,12 +453,16 @@ function TripsContent() {
             <PassengerSelector
               value={passengers}
               onChange={setPassengers}
-              className="md:w-52"
+              className="md:w-56"
+              fieldClassName="input-field-lg"
             />
             <button type="submit"
-              className="bg-brand-dark text-white font-bold py-3 px-6 rounded-xl
-                         hover:bg-brand-blue transition whitespace-nowrap">
-               Rechercher
+              className="h-[60px] bg-brand-dark text-white font-bold text-base px-8 rounded-xl
+                         hover:bg-brand-blue transition whitespace-nowrap flex items-center justify-center gap-2">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z" />
+              </svg>
+              Rechercher
             </button>
           </form>
         </div>

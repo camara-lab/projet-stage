@@ -24,6 +24,11 @@
            focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent
            bg-white text-gray-800 placeholder-gray-400 text-sm;
   }
+  .input-field-lg {
+    @apply w-full h-[60px] px-5 rounded-xl border border-gray-200
+           focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent
+           bg-white text-gray-800 placeholder-gray-500 text-base;
+  }
   .card {
     @apply bg-white rounded-2xl shadow-sm border border-gray-100 p-6;
   }

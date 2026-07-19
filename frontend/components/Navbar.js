@@ -72,18 +72,18 @@ export default function Navbar() {
   return (
     <nav className="bg-brand-dark text-white shadow-lg sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-20">
 
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-            <span className="text-2xl">🚌</span>
-            <span className="font-black text-xl tracking-tight">
+          <Link href="/" className="flex items-center gap-2.5 flex-shrink-0">
+            <span className="text-3xl">🚌</span>
+            <span className="font-black text-2xl tracking-tight">
               Bus<span className="text-brand-green">Go</span>
             </span>
           </Link>
 
           {/* Desktop nav */}
-          <div className="hidden md:flex items-center gap-6">
+          <div className="hidden md:flex items-center gap-8">
             {navLink('/', 'Accueil')}
             {navLink('/trips', 'Trajets')}
 
@@ -129,8 +129,8 @@ export default function Navbar() {
                   <button
                     onClick={() => setDropOpen(!dropOpen)}
                     className="flex items-center gap-2 group">
-                    <div className="w-8 h-8 rounded-full bg-brand-green flex items-center justify-center
-                                    text-brand-dark text-xs font-black group-hover:ring-2
+                    <div className="w-9 h-9 rounded-full bg-brand-green flex items-center justify-center
+                                    text-brand-dark text-sm font-black group-hover:ring-2
                                     group-hover:ring-brand-green/50 transition">
                       {getInitials(user)}
                     </div>
@@ -176,14 +176,20 @@ export default function Navbar() {
                 </div>
               </>
             ) : (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-4">
                 <Link href="/auth/login"
-                  className="text-gray-300 hover:text-white text-sm font-medium transition">
+                  className="flex items-center gap-2 text-gray-300 hover:text-white text-sm font-medium transition">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round"
+                      d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
                   Connexion
                 </Link>
                 <Link href="/auth/register"
                   className="bg-brand-green text-brand-dark text-sm font-bold
-                             px-4 py-2 rounded-xl hover:bg-green-400 transition">
+                             px-5 py-2.5 rounded-xl hover:bg-green-400 transition
+                             shadow-lg shadow-brand-green/25 hover:shadow-brand-green/40
+                             hover:-translate-y-0.5 transform duration-200">
                   S'inscrire
                 </Link>
               </div>

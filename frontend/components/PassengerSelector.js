@@ -36,7 +36,7 @@ const TYPES = [
  *   onChange (newValue) => void
  *   className  string (optionnel — ajouté sur le wrapper)
  */
-export default function PassengerSelector({ value, onChange, className = '' }) {
+export default function PassengerSelector({ value, onChange, className = '', fieldClassName = 'input-field' }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
 
@@ -75,7 +75,7 @@ export default function PassengerSelector({ value, onChange, className = '' }) {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="input-field w-full text-left flex items-center justify-between gap-2"
+        className={`${fieldClassName} w-full text-left flex items-center justify-between gap-2`}
       >
         <span className="flex items-center gap-2 min-w-0">
           <span className="text-base flex-shrink-0">👥</span>
