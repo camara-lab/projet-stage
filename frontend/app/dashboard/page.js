@@ -96,9 +96,9 @@ function CancelModal({ group, onConfirm, onClose }) {
           {isPaid ? (
             <ul className="space-y-1 text-gray-600 text-xs">
               <li>• {hoursUntil > 48
-                ? `Remboursement intégral — ${total.toFixed(2)} DH (départ dans plus de 48h)`
+                ? `Remboursement intégral : ${total.toFixed(2)} DH (départ dans plus de 48h)`
                 : hoursUntil > 24
-                  ? ` Remboursement à 50% — ${(total * 0.5).toFixed(2)} DH (moins de 48h)`
+                  ? ` Remboursement à 50% : ${(total * 0.5).toFixed(2)} DH (moins de 48h)`
                   : ' Aucun remboursement (départ dans moins de 24h)'}</li>
               <li>• Remboursement sous 5 à 7 jours ouvrés</li>
             </ul>
