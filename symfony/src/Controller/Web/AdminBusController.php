@@ -7,6 +7,7 @@ namespace App\Controller\Web;
 use App\Entity\Bus;
 use App\Form\BusType;
 use App\Repository\BusRepository;
+use Doctrine\DBAL\Exception\ForeignKeyConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -90,7 +91,7 @@ final class AdminBusController extends AbstractController
                 $em->remove($bus);
                 $em->flush();
                 $this->addFlash('success', "Bus \"{$bus->getPlateNumber()}\" supprimé.");
-            } catch (\Exception $e) {
+            } catch (ForeignKeyConstraintViolationException) {
                 $this->addFlash('error', "Impossible de supprimer le bus \"{$bus->getPlateNumber()}\" : il est affecté à des trajets existants.");
             }
         }

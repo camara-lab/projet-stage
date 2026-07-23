@@ -7,6 +7,7 @@ namespace App\Controller\Web;
 use App\Entity\City;
 use App\Form\CityType;
 use App\Repository\CityRepository;
+use Doctrine\DBAL\Exception\ForeignKeyConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -84,7 +85,7 @@ final class AdminCityController extends AbstractController
                 $em->remove($city);
                 $em->flush();
                 $this->addFlash('success', "Ville \"{$city->getName()}\" supprimée.");
-            } catch (\Exception $e) {
+            } catch (ForeignKeyConstraintViolationException) {
                 $this->addFlash('error', "Impossible de supprimer la ville \"{$city->getName()}\" : elle est utilisée par des lignes existantes.");
             }
         }

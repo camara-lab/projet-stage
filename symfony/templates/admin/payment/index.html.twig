@@ -70,7 +70,7 @@
             <a href="{{ path('admin_payment_index') }}" class="filter-reset"><i class="ti ti-x"></i> Réinitialiser</a>
         {% endif %}
     </form>
-    <div class="filter-results">{{ payments|length }} paiements affichés</div>
+    <div class="filter-results">{{ nbResults }} paiement{{ nbResults > 1 ? 's' }} trouvé{{ nbResults > 1 ? 's' }}</div>
 
     <div style="overflow-x:auto">
         <table class="activity-table" style="width:100%">
@@ -179,6 +179,20 @@
             </tbody>
         </table>
     </div>
+
+    {% if pages > 1 %}
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:16px">
+        {% if page > 1 %}
+            <a href="{{ path('admin_payment_index', {q: search, statut: statut, page: page - 1}) }}"
+               style="padding:6px 12px;border:1px solid var(--card-border);border-radius:8px;font-size:13px">&larr; Précédent</a>
+        {% endif %}
+        <span style="font-size:13px;color:var(--text-muted)">Page {{ page }} / {{ pages }}</span>
+        {% if page < pages %}
+            <a href="{{ path('admin_payment_index', {q: search, statut: statut, page: page + 1}) }}"
+               style="padding:6px 12px;border:1px solid var(--card-border);border-radius:8px;font-size:13px">Suivant &rarr;</a>
+        {% endif %}
+    </div>
+    {% endif %}
 </div>
 
 {% endblock %}

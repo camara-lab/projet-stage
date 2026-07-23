@@ -14,6 +14,10 @@ services:
     working_dir: /var/www/symfony
     volumes:
       - ./symfony:/var/www/symfony:cached
+      # Cache/logs Symfony et vendor dans des volumes natifs (perf WSL2 :
+      # le montage Windows est trop lent pour les milliers de fichiers lus à chaque requête)
+      - symfony_var:/var/www/symfony/var
+      - symfony_vendor:/var/www/symfony/vendor
       - ./docker/php/php.ini:/usr/local/etc/php/conf.d/zz-custom.ini:ro
     environment:
       APP_ENV: ${APP_ENV:-dev}
@@ -94,4 +98,8 @@ networks:
 
 volumes:
   db_data:
+    driver: local
+  symfony_var:
+    driver: local
+  symfony_vendor:
     driver: local

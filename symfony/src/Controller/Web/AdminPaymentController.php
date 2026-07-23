@@ -47,23 +47,37 @@ final class AdminPaymentController extends AbstractController
             $qb->andWhere('p.paymentStatus = :statut')->setParameter('statut', $statut);
         }
 
-        $payments = $qb->getQuery()->getResult();
+        $page      = max(1, $request->query->getInt('page', 1));
+        $parPage   = 20;
+        $nbResults = (int) (clone $qb)->select('COUNT(p.id)')->getQuery()->getSingleScalarResult();
+        $pages     = max(1, (int) ceil($nbResults / $parPage));
 
-        // Les KPIs sont calculés sur TOUS les paiements (pas seulement les filtrés)
-        $all       = $repo->createQueryBuilder('p2')->getQuery()->getResult();
-        $total     = array_sum(array_map(fn ($p) => (float) $p->getAmount(), array_filter($all, fn ($p) => $p->getPaymentStatus() === 'COMPLETED')));
-        $completed = count(array_filter($all, fn ($p) => $p->getPaymentStatus() === 'COMPLETED'));
-        $pending   = count(array_filter($all, fn ($p) => $p->getPaymentStatus() === 'PENDING'));
-        $refunded  = count(array_filter($all, fn ($p) => $p->getPaymentStatus() === 'REFUNDED'));
+        $payments = $qb
+            ->setFirstResult(($page - 1) * $parPage)
+            ->setMaxResults($parPage)
+            ->getQuery()->getResult();
+
+        // KPIs calculés en SQL sur TOUS les paiements (pas seulement les filtrés)
+        $kpis = $repo->createQueryBuilder('p2')
+            ->select(
+                "COALESCE(SUM(CASE WHEN p2.paymentStatus = 'COMPLETED' THEN p2.amount ELSE 0 END), 0) AS total",
+                "SUM(CASE WHEN p2.paymentStatus = 'COMPLETED' THEN 1 ELSE 0 END) AS completed",
+                "SUM(CASE WHEN p2.paymentStatus = 'PENDING' THEN 1 ELSE 0 END) AS pending",
+                "SUM(CASE WHEN p2.paymentStatus = 'REFUNDED' THEN 1 ELSE 0 END) AS refunded",
+            )
+            ->getQuery()->getSingleResult();
 
         return $this->render('admin/payment/index.html.twig', [
             'payments'  => $payments,
-            'total'     => $total,
-            'completed' => $completed,
-            'pending'   => $pending,
-            'refunded'  => $refunded,
+            'total'     => (float) $kpis['total'],
+            'completed' => (int) $kpis['completed'],
+            'pending'   => (int) $kpis['pending'],
+            'refunded'  => (int) $kpis['refunded'],
             'search'    => $search,
             'statut'    => $statut,
+            'page'      => $page,
+            'pages'     => $pages,
+            'nbResults' => $nbResults,
         ]);
     }
 

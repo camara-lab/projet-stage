@@ -7,6 +7,7 @@ namespace App\Controller\Web;
 use App\Entity\Route as BusRoute;
 use App\Form\RouteType;
 use App\Repository\RouteRepository;
+use Doctrine\DBAL\Exception\ForeignKeyConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -100,7 +101,7 @@ final class AdminRouteController extends AbstractController
                 $em->remove($route);
                 $em->flush();
                 $this->addFlash('success', 'Ligne supprimée.');
-            } catch (\Exception $e) {
+            } catch (ForeignKeyConstraintViolationException) {
                 $this->addFlash('error', 'Impossible de supprimer cette ligne : elle est utilisée par des trajets existants.');
             }
         }

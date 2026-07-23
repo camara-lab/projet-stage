@@ -44,12 +44,23 @@ final class AdminBookingController extends AbstractController
             $qb->andWhere('b.status = :statut')->setParameter('statut', $statut);
         }
 
-        $bookings = $qb->getQuery()->getResult();
+        $page    = max(1, $request->query->getInt('page', 1));
+        $parPage = 20;
+        $total   = (int) (clone $qb)->select('COUNT(b.id)')->getQuery()->getSingleScalarResult();
+        $pages   = max(1, (int) ceil($total / $parPage));
+
+        $bookings = $qb
+            ->setFirstResult(($page - 1) * $parPage)
+            ->setMaxResults($parPage)
+            ->getQuery()->getResult();
 
         return $this->render('admin/booking/index.html.twig', [
             'bookings' => $bookings,
             'search'   => $search,
             'statut'   => $statut,
+            'page'     => $page,
+            'pages'    => $pages,
+            'total'    => $total,
         ]);
     }
 

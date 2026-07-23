@@ -56,7 +56,7 @@
                 <tr><th class="text-muted">Créée le</th><td>{{ booking.createdAt|date('d/m/Y H:i') }}</td></tr>
                 {% if booking.payment %}
                 <tr><th class="text-muted">Paiement</th>
-                    <td>{{ booking.payment.amount }} DH — {{ booking.payment.paymentMethod }}<br>
+                    <td>{{ booking.payment.amount }} DH · {{ booking.payment.paymentMethod }}<br>
                         <span class="badge badge-{{ booking.payment.paymentStatus|lower }}">{{ booking.payment.paymentStatus }}</span></td></tr>
                 {% endif %}
             </table>

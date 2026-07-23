@@ -55,7 +55,7 @@
         {% if booking.payment and booking.payment.paymentStatus == 'REFUNDED' %}
         <div class="refund-box">
             <p>
-                ✅ <strong>Remboursement en cours</strong> — Le montant de
+                ✅ <strong>Remboursement en cours</strong> : Le montant de
                 <strong>{{ booking.payment.amount|number_format(2, ',', ' ') }} DH</strong>
                 sera remboursé sur votre moyen de paiement d'origine sous 3 à 5 jours ouvrés.
             </p>
@@ -71,7 +71,7 @@
     </div>
 
     <div class="footer">
-        <p>© {{ "now"|date("Y") }} Bus Booking — <a href="#">support@busbooking.ma</a></p>
+        <p>© {{ "now"|date("Y") }} Bus Booking · <a href="#">support@busbooking.ma</a></p>
         <p>Cet email a été envoyé automatiquement, merci de ne pas y répondre.</p>
     </div>
 
