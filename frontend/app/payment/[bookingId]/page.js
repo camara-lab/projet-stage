@@ -7,6 +7,9 @@ import { PaymentSkeleton } from '@/components/Skeleton'
 import { calcTotalPrice } from '@/components/PassengerSelector'
 import { normalizePassengers } from '@/lib/passengers'
 import { getBasePrice } from '@/lib/trips'
+import PassengerInfoForm, { emptyPassenger, isPassengerComplete } from '@/components/PassengerInfoForm'
+import ExtrasSelector, { calcExtrasTotal, selectedExtrasList } from '@/components/ExtrasSelector'
+import { getUser } from '@/lib/auth'
 import toast from 'react-hot-toast'
 
 const METHODS = [
@@ -137,24 +140,83 @@ function PaymentContent() {
   const [step,       setStep]       = useState(1)
   const [extraData,  setExtraData]  = useState({})
 
+  // Informations des passagers, conservées en sessionStorage pendant la réservation
+  const paxKey = `busgo_pax_${allIds.join('-')}`
+  const [paxList, setPaxList] = useState([])
+
+  // Extras, conservés en sessionStorage pendant la réservation
+  const extrasKey = `busgo_extras_${allIds.join('-')}`
+  const [extras, setExtras] = useState({})
+
+  // Acceptation des CGV / politique de confidentialité
+  const [termsAccepted, setTermsAccepted] = useState(false)
+
   const selectedMethod = METHODS.find((m) => m.id === method)
+  const allPaxComplete = paxList.length > 0 && paxList.every(isPassengerComplete)
 
   useEffect(() => {
     if (!localStorage.getItem('token')) { router.push('/auth/login'); return }
+
+    // Restaurer les infos passagers si l'utilisateur revient sur la page
+    try {
+      const savedExtras = JSON.parse(sessionStorage.getItem(extrasKey))
+      if (savedExtras) setExtras(savedExtras)
+    } catch {}
+
+    let saved = null
+    try { saved = JSON.parse(sessionStorage.getItem(paxKey)) } catch {}
+    if (saved?.length) {
+      setPaxList(saved)
+    } else {
+      const list = [
+        ...Array.from({ length: adults },   () => emptyPassenger('adult')),
+        ...Array.from({ length: children }, () => emptyPassenger('child')),
+        ...Array.from({ length: babies },   () => emptyPassenger('baby')),
+      ]
+      // Préremplir le 1er adulte avec le compte connecté
+      const user = getUser()
+      if (list[0] && user?.fullName) {
+        const parts = user.fullName.trim().split(' ')
+        list[0] = { ...list[0], prenom: parts[0] || '', nom: parts.slice(1).join(' ') || '' }
+      }
+      setPaxList(list)
+    }
+
     Promise.all(allIds.map((id) => getBooking(id).then(({ data }) => data)))
       .then(setBookings)
       .catch(() => { toast.error('Réservation introuvable'); router.push('/dashboard') })
       .finally(() => setLoading(false))
   }, [bookingId])
 
+  const updatePaxList = (next) => {
+    setPaxList(next)
+    try { sessionStorage.setItem(paxKey, JSON.stringify(next)) } catch {}
+  }
+
+  const updateExtras = (next) => {
+    setExtras(next)
+    try { sessionStorage.setItem(extrasKey, JSON.stringify(next)) } catch {}
+  }
+
   const firstBooking = bookings[0]
   const basePrice    = getBasePrice(firstBooking?.trip)
   const childPrice   = +(basePrice * 0.75).toFixed(2)
   const total        = calcTotalPrice(basePrice, { adults, children, babies })
+  const extrasTotal  = calcExtrasTotal(extras)
+  const extrasChosen = selectedExtrasList(extras)
+  const grandTotal   = total + extrasTotal
   const multiPax     = (adults + children + babies) > 1
   const seats        = bookings.map((b) => b.seatNumber).filter(Boolean)
 
   const handlePay = async () => {
+    if (!termsAccepted) {
+      toast.error('Veuillez accepter les Conditions Générales de Vente pour continuer')
+      return
+    }
+    // Trace de l'acceptation, conservée avec la réservation côté client
+    try {
+      localStorage.setItem(`busgo_terms_${allIds.join('-')}`, JSON.stringify({ acceptedAt: new Date().toISOString() }))
+    } catch {}
     setPaying(true)
     try {
       for (const id of allIds) {
@@ -165,6 +227,7 @@ function PaymentContent() {
           amount:          method === 'CARD' ? total : undefined,
         })
       }
+      try { sessionStorage.removeItem(paxKey); sessionStorage.removeItem(extrasKey) } catch {}
       toast.success(`${allIds.length} billet${allIds.length > 1 ? 's' : ''} confirmé${allIds.length > 1 ? 's' : ''} ! 🎉`)
       router.push('/dashboard?paid=1')
     } catch (err) {
@@ -181,22 +244,24 @@ function PaymentContent() {
       <Navbar />
       <div className="max-w-3xl mx-auto px-4 py-10">
 
-        <button onClick={() => step === 1 ? router.back() : setStep(1)}
+        <button onClick={() => step === 1 ? router.back() : setStep(step - 1)}
           className="flex items-center gap-2 text-gray-500 hover:text-gray-800 mb-6 text-sm font-medium">
-          ← {step === 1 ? 'Retour' : 'Modifier la méthode'}
+          ← {step === 1 ? 'Retour' : 'Étape précédente'}
         </button>
 
-        <h1 className="text-2xl font-black text-gray-900 mb-6">Paiement sécurisé</h1>
+        <h1 className="text-2xl font-black text-gray-900 mb-6">
+          {step === 1 ? 'Informations des passagers' : 'Paiement sécurisé'}
+        </h1>
 
         <div className="flex items-center gap-3 mb-8">
-          {['Méthode de paiement', 'Confirmation'].map((s, i) => (
+          {['Passagers', 'Méthode de paiement', 'Confirmation'].map((s, i) => (
             <div key={s} className="flex items-center gap-2">
               <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black
                 ${step > i+1 ? 'bg-brand-green text-brand-dark' : step === i+1 ? 'bg-brand-dark text-white' : 'bg-gray-200 text-gray-400'}`}>
                 {step > i+1 ? '✓' : i+1}
               </div>
               <span className={`text-sm font-semibold hidden sm:inline ${step === i+1 ? 'text-gray-900' : 'text-gray-400'}`}>{s}</span>
-              {i < 1 && <div className="w-8 sm:w-16 h-0.5 bg-gray-200" />}
+              {i < 2 && <div className="w-6 sm:w-12 h-0.5 bg-gray-200" />}
             </div>
           ))}
         </div>
@@ -205,6 +270,23 @@ function PaymentContent() {
             <div className="md:col-span-3 space-y-4">
 
             {step === 1 && (
+              <>
+                <PassengerInfoForm passengers={paxList} onChange={updatePaxList} />
+                <ExtrasSelector value={extras} onChange={updateExtras} />
+                <button
+                  onClick={() => allPaxComplete
+                    ? setStep(2)
+                    : toast.error('Complétez les informations de tous les passagers')}
+                  disabled={!allPaxComplete}
+                  className="w-full bg-brand-green text-brand-dark font-black py-4 rounded-xl
+                             hover:bg-green-400 transition text-base
+                             disabled:opacity-40 disabled:cursor-not-allowed">
+                  {allPaxComplete ? 'Continuer vers le paiement →' : 'Complétez les informations des passagers'}
+                </button>
+              </>
+            )}
+
+            {step === 2 && (
               <>
                 <div className="card">
                   <h2 className="font-black text-gray-900 mb-4 text-base">Choisissez votre méthode de paiement</h2>
@@ -239,14 +321,14 @@ function PaymentContent() {
                   {method === 'WALLET'   && <WalletForm onChange={(p) => setExtraData({ phone: p })} />}
                   {method === 'TRANSFER' && <TransferBlock />}
                 </div>
-                <button onClick={() => setStep(2)}
+                <button onClick={() => setStep(3)}
                   className="w-full bg-brand-green text-brand-dark font-black py-4 rounded-xl hover:bg-green-400 transition text-base">
                   Continuer →
                 </button>
               </>
             )}
 
-            {step === 2 && (
+            {step === 3 && (
               <div className="card">
                 <h2 className="font-black text-gray-900 mb-5 text-base">Confirmez votre paiement</h2>
                 <div className="flex items-center gap-3 p-3.5 bg-gray-50 rounded-xl mb-5">
@@ -259,7 +341,10 @@ function PaymentContent() {
 
                 <div className="bg-gradient-to-br from-brand-dark to-brand-navy rounded-xl p-5 text-white text-center mb-5">
                   <div className="text-sm text-gray-300 mb-1">Montant total à payer</div>
-                  <div className="text-4xl font-black text-brand-green">{total.toFixed(2)} <span className="text-2xl">DH</span></div>
+                  <div className="text-4xl font-black text-brand-green">{grandTotal.toFixed(2)} <span className="text-2xl">DH</span></div>
+                  {extrasTotal > 0 && (
+                    <div className="text-xs text-gray-400 mt-0.5">dont {extrasTotal} DH d'extras</div>
+                  )}
                   <div className="text-xs text-gray-400 mt-1">
                     {allIds.length} billet{allIds.length > 1 ? 's' : ''} · sièges {seats.join(', ')}
                   </div>
@@ -269,12 +354,38 @@ function PaymentContent() {
                   Cette opération est une simulation pédagogique. Aucun vrai paiement ne sera effectué.
                 </div>
 
+                {/* Conditions & confidentialité */}
+                <div className="border border-gray-200 rounded-xl p-4 mb-5">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={termsAccepted}
+                      onChange={(e) => setTermsAccepted(e.target.checked)}
+                      className="mt-0.5 w-5 h-5 rounded border-gray-300 accent-brand-green flex-shrink-0 cursor-pointer"
+                    />
+                    <span className="text-sm text-gray-700 leading-relaxed">
+                      J'ai lu et j'accepte les{' '}
+                      <a href="/cgv" target="_blank" className="font-semibold text-brand-dark underline underline-offset-2 hover:text-brand-blue">
+                        Conditions Générales de Vente
+                      </a>{' '}
+                      ainsi que la{' '}
+                      <a href="/confidentialite" target="_blank" className="font-semibold text-brand-dark underline underline-offset-2 hover:text-brand-blue">
+                        Politique de confidentialité
+                      </a>. <span className="text-red-500">*</span>
+                    </span>
+                  </label>
+                  <p className="text-xs text-gray-400 mt-3 pl-8">
+                    Vos données personnelles sont traitées conformément à notre Politique de
+                    confidentialité et sont utilisées uniquement pour gérer votre réservation.
+                  </p>
+                </div>
+
                 <div className="flex flex-col gap-3">
-                  <button onClick={handlePay} disabled={paying}
+                  <button onClick={handlePay} disabled={paying || !termsAccepted}
                     className="w-full bg-brand-green text-brand-dark font-black py-4 rounded-xl hover:bg-green-400 transition disabled:opacity-50 text-base flex items-center justify-center gap-2">
-                    {paying ? <><span className="animate-spin">⏳</span> Traitement…</> : <> Payer {total.toFixed(2)} DH maintenant</>}
+                    {paying ? <><span className="animate-spin">⏳</span> Traitement…</> : <> Payer {grandTotal.toFixed(2)} DH maintenant</>}
                   </button>
-                  <button onClick={() => setStep(1)} className="text-sm text-gray-500 hover:text-gray-800 transition underline underline-offset-2 text-center">
+                  <button onClick={() => setStep(2)} className="text-sm text-gray-500 hover:text-gray-800 transition underline underline-offset-2 text-center">
                     ← Modifier la méthode de paiement
                   </button>
                 </div>
@@ -328,9 +439,22 @@ function PaymentContent() {
                     <span className="text-gray-400 text-xs">Frais de service</span>
                     <span className="text-green-600 text-xs font-semibold">Gratuit</span>
                   </div>
+
+                  {extrasChosen.length > 0 && (
+                    <div className="border-t border-gray-100 pt-2 mt-2 space-y-1.5">
+                      <div className="text-xs font-bold text-gray-500">Extras</div>
+                      {extrasChosen.map((x) => (
+                        <div key={x.id} className="flex justify-between text-xs text-gray-500">
+                          <span>{x.icon} {x.name}{x.qty > 1 ? ` × ${x.qty}` : ''}</span>
+                          <span>{x.price === 0 ? 'Gratuit' : `${(x.price * x.qty).toFixed(2)} DH`}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
                   <div className="flex justify-between font-black mt-2 pt-2 border-t border-gray-100 text-base">
                     <span>Total</span>
-                    <span className="text-brand-dark">{total.toFixed(2)} DH</span>
+                    <span className="text-brand-dark">{grandTotal.toFixed(2)} DH</span>
                   </div>
                 </div>
 
