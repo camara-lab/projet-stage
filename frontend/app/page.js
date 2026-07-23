@@ -1,10 +1,11 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { getCities } from '@/lib/api'
 import PassengerSelector from '@/components/PassengerSelector'
+import { getRecentSearches, saveRecentSearch, removeRecentSearch } from '@/lib/recentSearches'
 
 const POPULAR = [
   {
@@ -38,14 +39,28 @@ export default function Home() {
   const [fromId,     setFromId]     = useState(null)
   const [toId,       setToId]       = useState(null)
   const [passengers, setPassengers] = useState({ adults: 1, children: 0, babies: 0 })
+  const [recent,     setRecent]     = useState([])
+  const [showRecent, setShowRecent] = useState(false)
+  const searchRef = useRef(null)
 
   useEffect(() => {
     getCities().then(({ data }) => setCities(data)).catch(() => {})
+    setRecent(getRecentSearches())
+  }, [])
+
+  // Fermer le panneau des recherches récentes au clic extérieur
+  useEffect(() => {
+    const handler = (e) => {
+      if (searchRef.current && !searchRef.current.contains(e.target)) setShowRecent(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
   }, [])
 
   const handleSearch = (e) => {
     e.preventDefault()
     if (!form.from || !form.to || !form.date) return
+    saveRecentSearch({ from: form.from, to: form.to, date: form.date })
     const fId = fromId ?? form.from
     const tId = toId   ?? form.to
     const { adults, children, babies } = passengers
@@ -53,6 +68,18 @@ export default function Home() {
       `/trips?from=${encodeURIComponent(fId)}&to=${encodeURIComponent(tId)}&date=${form.date}` +
       `&adults=${adults}&children=${children}&babies=${babies}`
     )
+  }
+
+  const useRecent = (s) => {
+    // Si la date mémorisée est passée, on repart sur aujourd'hui
+    const date = s.date && s.date >= today ? s.date : today
+    setShowRecent(false)
+    router.push(`/trips?from=${encodeURIComponent(s.from)}&to=${encodeURIComponent(s.to)}&date=${date}`)
+  }
+
+  const deleteRecent = (e, index) => {
+    e.stopPropagation()
+    setRecent(removeRecentSearch(index))
   }
 
   const swapCities = () => setForm((f) => ({ ...f, from: f.to, to: f.from }))
@@ -65,40 +92,38 @@ export default function Home() {
     <div className="min-h-screen">
       <Navbar />
 
-      <section className="relative bg-gradient-to-br from-brand-dark via-brand-navy to-brand-blue
-                          min-h-[620px] flex items-center">
-        {/* Cercles décoratifs — clip isolé pour ne pas couper les dropdowns */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-green opacity-[0.04]
-                          rounded-full -translate-y-1/2 translate-x-1/3"></div>
-          <div className="absolute bottom-0 left-0 w-72 h-72 bg-sky-500 opacity-[0.04]
-                          rounded-full translate-y-1/2 -translate-x-1/3"></div>
-        </div>
+      <section className="relative min-h-[500px] flex items-center">
+        {/* Image de fond + overlay sombre pour la lisibilité */}
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: "url('/hero-bus.jpg')" }}
+        ></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-brand-dark/90 via-brand-dark/75 to-brand-navy/90"></div>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-16 w-full">
-          <div className="text-center mb-10">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-12 w-full">
+          <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2 bg-brand-green/10 border border-brand-green/30
-                            text-brand-green text-sm font-semibold px-4 py-1.5 rounded-full mb-6">
+                            text-brand-green text-sm font-semibold px-4 py-1.5 rounded-full mb-5">
               🚌 Réservation rapide &amp; 100% marocaine
             </div>
-            <h1 className="text-4xl md:text-6xl font-black text-white mb-4 leading-tight">
+            <h1 className="text-4xl md:text-6xl font-black text-white mb-4 leading-tight drop-shadow-lg">
               Voyagez à travers
               <br />
               <span className="text-brand-green">le Maroc</span> en bus
             </h1>
-            <p className="text-gray-300 text-lg md:text-xl max-w-xl mx-auto leading-relaxed">
+            <p className="text-gray-200 text-lg md:text-xl max-w-xl mx-auto leading-relaxed drop-shadow">
               Comparez et réservez vos billets de bus inter-villes en quelques clics.
               Simple, rapide, sans stress.
             </p>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-2xl max-w-5xl mx-auto overflow-visible">
+          <div ref={searchRef} className="relative bg-white rounded-2xl shadow-2xl max-w-5xl mx-auto overflow-visible">
             <form onSubmit={handleSearch}>
               <div className="flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-gray-100">
 
-                <div className="flex-1 px-5 py-4 min-w-0">
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">
-                    🟢 Départ
+                <div className="flex-1 px-6 py-5 min-w-0">
+                  <label className="flex items-center gap-1.5 text-[11px] font-black text-gray-500 uppercase tracking-widest mb-2">
+                    <span className="text-base">🟢</span> Départ
                   </label>
                   <div className="flex items-center gap-2">
                     <input
@@ -112,8 +137,9 @@ export default function Home() {
                         const match = cities.find((c) => c.name === val)
                         setFromId(match ? match.id : null)
                       }}
-                      className="w-full text-base font-bold text-gray-900 placeholder:text-gray-300
-                                 outline-none border-none bg-transparent"
+                      onFocus={() => setShowRecent(true)}
+                      className="w-full text-lg font-bold text-gray-900 placeholder:text-gray-400
+                                 placeholder:font-medium outline-none border-none bg-transparent"
                       autoComplete="off"
                       required
                     />
@@ -122,18 +148,18 @@ export default function Home() {
                     </datalist>
                         <button type="button" onClick={swapCities}
                       title="Inverser"
-                      className="flex-shrink-0 w-8 h-8 rounded-full border-2 border-gray-200
+                      className="flex-shrink-0 w-10 h-10 rounded-full border-2 border-gray-200
                                  flex items-center justify-center text-gray-400 font-bold
                                  hover:border-brand-green hover:text-brand-green
-                                 hover:bg-green-50 transition-all active:scale-90 text-sm">
+                                 hover:bg-green-50 transition-all active:scale-90 text-base">
                       ⇆
                     </button>
                   </div>
                 </div>
 
-                <div className="flex-1 px-5 py-4 min-w-0">
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">
-                    🔴 Arrivée
+                <div className="flex-1 px-6 py-5 min-w-0">
+                  <label className="flex items-center gap-1.5 text-[11px] font-black text-gray-500 uppercase tracking-widest mb-2">
+                    <span className="text-base">🔴</span> Arrivée
                   </label>
                   <input
                     type="text"
@@ -146,8 +172,9 @@ export default function Home() {
                       const match = cities.find((c) => c.name === val)
                       setToId(match ? match.id : null)
                     }}
-                    className="w-full text-base font-bold text-gray-900 placeholder:text-gray-300
-                               outline-none border-none bg-transparent"
+                    onFocus={() => setShowRecent(true)}
+                    className="w-full text-lg font-bold text-gray-900 placeholder:text-gray-400
+                               placeholder:font-medium outline-none border-none bg-transparent"
                     autoComplete="off"
                     required
                   />
@@ -156,20 +183,20 @@ export default function Home() {
                   </datalist>
                 </div>
 
-                <div className="flex-shrink-0 px-5 py-4 w-full md:w-44">
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">
-                    📅 Date
+                <div className="flex-shrink-0 px-6 py-5 w-full md:w-48">
+                  <label className="flex items-center gap-1.5 text-[11px] font-black text-gray-500 uppercase tracking-widest mb-2">
+                    <span className="text-base">📅</span> Date
                   </label>
                   <input type="date" value={form.date} min={today}
                     onChange={(e) => setForm({ ...form, date: e.target.value })}
-                    className="w-full text-base font-bold text-gray-900 outline-none
+                    className="w-full text-lg font-bold text-gray-900 outline-none
                                border-none bg-transparent"
                     required />
                 </div>
 
-                <div className="flex-shrink-0 px-5 py-4 w-full md:w-52">
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">
-                    👥 Passagers
+                <div className="flex-shrink-0 px-6 py-5 w-full md:w-56">
+                  <label className="flex items-center gap-1.5 text-[11px] font-black text-gray-500 uppercase tracking-widest mb-2">
+                    <span className="text-base">👥</span> Passagers
                   </label>
                   <PassengerSelector value={passengers} onChange={setPassengers} className="[&>button]:border-none [&>button]:p-0 [&>button]:shadow-none [&>button]:bg-transparent" />
                 </div>
@@ -177,10 +204,10 @@ export default function Home() {
               </div>
 
               <button type="submit"
-                className="w-full bg-brand-green text-brand-dark font-black text-base py-4
-                           flex items-center justify-center gap-2
+                className="w-full bg-brand-green text-brand-dark font-black text-lg py-5
+                           flex items-center justify-center gap-2.5
                            hover:bg-green-400 transition-colors rounded-b-2xl">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round"
                     d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z" />
                 </svg>
@@ -188,6 +215,61 @@ export default function Home() {
               </button>
 
             </form>
+
+            {/* Recherches récentes */}
+            {showRecent && recent.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl
+                              border border-gray-100 py-2 z-40 max-w-2xl mx-auto">
+                <p className="px-5 py-2 text-[11px] font-black text-gray-400 uppercase tracking-widest">
+                  🕘 Vos dernières recherches
+                </p>
+                {recent.map((s, i) => (
+                  <div
+                    key={s.from + s.to + i}
+                    onClick={() => useRecent(s)}
+                    className="flex items-center justify-between gap-3 px-5 py-3 cursor-pointer
+                               hover:bg-gray-50 transition group"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="font-bold text-sm text-gray-800 truncate">
+                        {s.from} <span className="text-gray-400">→</span> {s.to}
+                      </span>
+                      {s.date && (
+                        <span className="text-xs text-gray-400 flex-shrink-0">
+                          {new Date(s.date + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => deleteRecent(e, i)}
+                      title="Supprimer cette recherche"
+                      className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center
+                                 text-gray-300 hover:text-red-500 hover:bg-red-50 transition
+                                 opacity-0 group-hover:opacity-100"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Réassurance */}
+          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2 mt-6">
+            <span className="flex items-center gap-2 text-gray-200 text-sm font-medium drop-shadow">
+              <span className="text-brand-green">✓</span> Paiement 100% sécurisé
+            </span>
+            <span className="flex items-center gap-2 text-gray-200 text-sm font-medium drop-shadow">
+              <span className="text-brand-green">✓</span> E-billet immédiat
+            </span>
+            <span className="flex items-center gap-2 text-gray-200 text-sm font-medium drop-shadow">
+              <span className="text-brand-green">✓</span> Annulation flexible
+            </span>
+            <span className="flex items-center gap-2 text-gray-200 text-sm font-medium drop-shadow">
+              <span className="text-brand-green">✓</span> Support 7j/7
+            </span>
           </div>
         </div>
       </section>
@@ -212,8 +294,8 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="max-w-7xl mx-auto px-4 py-20">
-        <div className="text-center mb-12">
+      <section className="max-w-7xl mx-auto px-4 py-14">
+        <div className="text-center mb-10">
           <h2 className="text-3xl font-black text-gray-900 mb-3">Destinations populaires</h2>
           <p className="text-gray-500">Les trajets les plus empruntés par nos voyageurs</p>
         </div>
@@ -275,15 +357,15 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="bg-gray-50 py-20">
+      <section className="bg-gray-50 py-14">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-12">
+          <div className="text-center mb-10">
             <h2 className="text-3xl font-black text-gray-900 mb-3">Pourquoi choisir BusGo ?</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
               { icon: '⚡', title: 'Réservation rapide',  desc: 'Réservez votre billet en moins de 2 minutes sans file d\'attente.' },
-              { icon: '🔒', title: 'Paiement 100% marocain', desc: 'CMI, Cash Plus, Maroc Pay, virement bancaire — vos méthodes habituelles.' },
+              { icon: '🔒', title: 'Paiement 100% marocain', desc: 'CMI, Cash Plus, Maroc Pay, virement bancaire : vos méthodes habituelles.' },
               { icon: '📱', title: 'E-billet mobile',     desc: 'Téléchargez votre billet PDF avec QR Code et montrez-le à l\'embarquement.' },
             ].map((f) => (
               <div key={f.title} className="card text-center hover:shadow-md transition">
@@ -296,7 +378,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="bg-white py-20">
+      <section className="bg-white py-14">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-10">
             <h2 className="text-3xl font-black text-gray-900 mb-3">
@@ -307,7 +389,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="rounded-2xl overflow-hidden mb-12 shadow-lg max-w-4xl mx-auto">
+          <div className="rounded-2xl overflow-hidden mb-10 shadow-lg max-w-4xl mx-auto">
             <img
               src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=1200&q=80"
               alt="Bus BusGo sur la route"
@@ -376,7 +458,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="bg-brand-dark py-20 text-center">
+      <section className="bg-brand-dark py-14 text-center">
         <div className="max-w-2xl mx-auto px-4">
           <h2 className="text-3xl font-black text-white mb-4">Prêt à voyager ?</h2>
           <p className="text-gray-300 mb-8">
