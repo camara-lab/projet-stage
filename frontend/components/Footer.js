@@ -37,11 +37,18 @@ export default function Footer() {
             <ul className="space-y-2 text-sm">
               <li>📧 contact@busgo.ma</li>
               <li>📞 +212 5XX-XXXXXX</li>
-              <li>🕐 24h/24 — 7j/7</li>
+              <li>🕐 24h/24, 7j/7</li>
             </ul>
           </div>
         </div>
         <div className="border-t border-gray-700 mt-10 pt-6 text-center text-xs">
+          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 mb-4">
+            <Link href="/cgv" className="hover:text-white transition">Conditions Générales de Vente</Link>
+            <Link href="/confidentialite" className="hover:text-white transition">Politique de confidentialité</Link>
+            <Link href="/mentions-legales" className="hover:text-white transition">Mentions légales</Link>
+            <Link href="/remboursement" className="hover:text-white transition">Politique de remboursement</Link>
+            <Link href="/aide?tab=contact" className="hover:text-white transition">Contact</Link>
+          </div>
           © {new Date().getFullYear()} BusGo Tous droits réservés
         </div>
       </div>
