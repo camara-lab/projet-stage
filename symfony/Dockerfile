@@ -27,6 +27,14 @@ RUN apk add --no-cache \
         bcmath \
         xml \
         dom \
+    && apk add --no-cache \
+        icu-libs \
+        libzip \
+        oniguruma \
+        freetype \
+        libjpeg-turbo \
+        libpng \
+        libxml2 \
     && apk del --no-cache icu-dev libzip-dev oniguruma-dev freetype-dev \
                           libjpeg-turbo-dev libpng-dev libxml2-dev
 
