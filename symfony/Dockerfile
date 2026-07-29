@@ -57,7 +57,8 @@ RUN { \
     echo 'max_execution_time=60'; \
 } > /usr/local/etc/php/conf.d/app.ini
 
-# Composer 2
+# Composer 2 (plugins autorisés en root : requis pour symfony/flex et symfony/runtime)
+ENV COMPOSER_ALLOW_SUPERUSER=1
 COPY --from=composer:2.7 /usr/bin/composer /usr/bin/composer
 
 # ─────────────────────────────────────────────────────────────────────────────
