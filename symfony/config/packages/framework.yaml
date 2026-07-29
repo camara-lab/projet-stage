@@ -10,6 +10,13 @@ framework:
     php_errors:
         log: true
 
+when@prod:
+    framework:
+        # Derrière un reverse proxy (Render, Nginx…) : lire la vraie IP client
+        # dans X-Forwarded-For, sinon le rate limiter partage une IP unique
+        trusted_proxies: 'REMOTE_ADDR'
+        trusted_headers: ['x-forwarded-for', 'x-forwarded-host', 'x-forwarded-proto', 'x-forwarded-port']
+
 when@test:
     framework:
         test: true
