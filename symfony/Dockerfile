@@ -81,6 +81,10 @@ RUN composer install \
 # 2. Copier le code source
 COPY . .
 
+# .env minimal requis par Symfony Dotenv (les vraies valeurs viennent des
+# variables d'environnement injectées par l'hébergeur)
+RUN printf 'APP_ENV=prod\n' > .env
+
 # 3. Chiffrer le cache autoloader + préparer le répertoire var/
 RUN composer dump-autoload --optimize --no-dev \
     && mkdir -p var/cache var/log \
