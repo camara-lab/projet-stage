@@ -81,9 +81,14 @@ RUN composer install \
 # 2. Copier le code source
 COPY . .
 
-# .env minimal requis par Symfony Dotenv (les vraies valeurs viennent des
-# variables d'environnement injectées par l'hébergeur)
-RUN printf 'APP_ENV=prod\n' > .env
+# .env minimal requis par Symfony Dotenv : chemins des clés JWT et valeurs
+# par défaut surchargées par les variables d'environnement de l'hébergeur
+RUN { \
+    echo 'APP_ENV=prod'; \
+    echo 'JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem'; \
+    echo 'JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem'; \
+    echo "CORS_ALLOW_ORIGIN='^https?://.+$'"; \
+} > .env
 
 # 3. Chiffrer le cache autoloader + préparer le répertoire var/
 RUN composer dump-autoload --optimize --no-dev \
