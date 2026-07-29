@@ -89,34 +89,34 @@ class AppFixtures extends Fixture
         }
 
         // -----------------------------------------------------------------
-        // 4. Trajets planifiés — juillet 2026 (dates futures)
+        // 4. Trajets planifiés — dates relatives pour garder des trajets futurs
         // -----------------------------------------------------------------
 
         // Trajet 1 : Casa → Marrakech, matin — utilisé pour la réservation PENDING
-        $trajet1 = $this->makeTrip($routeCasaMarrakech, $busCtm1, '2026-07-10 08:00', '2026-07-10 11:00', 'SCHEDULED');
+        $trajet1 = $this->makeTrip($routeCasaMarrakech, $busCtm1, '+2 days 08:00', '+2 days 11:00', 'SCHEDULED');
         $manager->persist($trajet1);
 
         // Trajet 2 : Casa → Marrakech, après-midi
-        $manager->persist($this->makeTrip($routeCasaMarrakech, $busCtm1, '2026-07-10 14:00', '2026-07-10 17:00', 'SCHEDULED'));
+        $manager->persist($this->makeTrip($routeCasaMarrakech, $busCtm1, '+2 days 14:00', '+2 days 17:00', 'SCHEDULED'));
 
         // Trajet 3 : Rabat → Tanger — utilisé pour la réservation PAID
-        $trajet3 = $this->makeTrip($routeRabatTanger, $busCtm3, '2026-07-11 09:30', '2026-07-11 12:00', 'SCHEDULED');
+        $trajet3 = $this->makeTrip($routeRabatTanger, $busCtm3, '+3 days 09:30', '+3 days 12:00', 'SCHEDULED');
         $manager->persist($trajet3);
 
         // Trajet 4 : Fès → Marrakech
-        $manager->persist($this->makeTrip($routeFesMarrakech, $busCtm2, '2026-07-12 07:00', '2026-07-12 12:00', 'SCHEDULED'));
+        $manager->persist($this->makeTrip($routeFesMarrakech, $busCtm2, '+4 days 07:00', '+4 days 12:00', 'SCHEDULED'));
 
         // Trajet 5 : Casa → Rabat (court)
-        $manager->persist($this->makeTrip($routeCasaRabat, $busCtm3, '2026-07-13 06:45', '2026-07-13 07:45', 'SCHEDULED'));
+        $manager->persist($this->makeTrip($routeCasaRabat, $busCtm3, '+5 days 06:45', '+5 days 07:45', 'SCHEDULED'));
 
         // Trajet 6 : Marrakech → Casa (retour)
-        $manager->persist($this->makeTrip($routeMarrakechCasa, $busCtm1, '2026-07-14 16:00', '2026-07-14 19:00', 'SCHEDULED'));
+        $manager->persist($this->makeTrip($routeMarrakechCasa, $busCtm1, '+6 days 16:00', '+6 days 19:00', 'SCHEDULED'));
 
         // Trajet annulé — pour tester la réponse 400 TripNotAvailableException
-        $manager->persist($this->makeTrip($routeCasaMarrakech, $busCtm1, '2026-07-01 08:00', '2026-07-01 11:00', 'CANCELLED'));
+        $manager->persist($this->makeTrip($routeCasaMarrakech, $busCtm1, '-7 days 08:00', '-7 days 11:00', 'CANCELLED'));
 
         // Trajet terminé — idem
-        $manager->persist($this->makeTrip($routeRabatTanger, $busCtm3, '2026-06-01 09:00', '2026-06-01 11:30', 'COMPLETED'));
+        $manager->persist($this->makeTrip($routeRabatTanger, $busCtm3, '-30 days 09:00', '-30 days 11:30', 'COMPLETED'));
 
         // -----------------------------------------------------------------
         // 5. Utilisateurs de test
