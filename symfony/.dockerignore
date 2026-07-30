@@ -1,0 +1,10 @@
+# Fichiers générés localement : ne jamais les embarquer dans l'image
+var/
+vendor/
+.env
+.env.local
+.env.*.local
+config/jwt/*.pem
+tests/
+.phpunit.result.cache
+.php-cs-fixer.cache

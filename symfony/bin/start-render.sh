@@ -2,6 +2,7 @@
 # Démarrage du service sur Render : prépare la base puis lance le serveur HTTP.
 set -e
 
+php bin/console cache:clear --no-interaction
 php bin/console doctrine:database:create --if-not-exists --no-interaction
 php bin/console doctrine:migrations:migrate --no-interaction
 php bin/console lexik:jwt:generate-keypair --skip-if-exists --no-interaction
