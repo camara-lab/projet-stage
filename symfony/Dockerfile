@@ -88,6 +88,7 @@ RUN { \
     echo 'JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem'; \
     echo 'JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem'; \
     echo "CORS_ALLOW_ORIGIN='^https?://.+$'"; \
+    echo 'COOKIE_SECURE=true'; \
 } > .env
 
 # 3. Chiffrer le cache autoloader + préparer le répertoire var/
