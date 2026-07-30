@@ -10,6 +10,7 @@ use App\Exception\PaymentAlreadyPaidException;
 use App\Exception\PaymentCancelledException;
 use App\Exception\SeatOutOfRangeException;
 use App\Exception\TripNotAvailableException;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -28,6 +29,10 @@ use Symfony\Component\HttpKernel\KernelEvents;
  */
 final class ApiExceptionSubscriber implements EventSubscriberInterface
 {
+    public function __construct(private readonly LoggerInterface $logger)
+    {
+    }
+
     public static function getSubscribedEvents(): array
     {
         return [KernelEvents::EXCEPTION => ['onKernelException', 10]];
@@ -44,6 +49,16 @@ final class ApiExceptionSubscriber implements EventSubscriberInterface
 
         $exception = $event->getThrowable();
         [$message, $status] = $this->resolve($exception);
+
+        // Les erreurs inattendues sont journalisées : sans cela, la réponse
+        // générique rend tout diagnostic impossible en production.
+        if ($status >= Response::HTTP_INTERNAL_SERVER_ERROR) {
+            $this->logger->error('Erreur API non gérée : {message}', [
+                'message'   => $exception->getMessage(),
+                'exception' => $exception,
+                'route'     => $request->getPathInfo(),
+            ]);
+        }
 
         $event->setResponse(new JsonResponse(
             ['message' => $message, 'code' => $status],
