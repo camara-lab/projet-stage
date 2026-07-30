@@ -310,6 +310,9 @@
     <!-- ── Code billet ── -->
     <div class="barcode-box">
         <div class="barcode-label">CODE BILLET</div>
+        {% if qrCode is defined %}
+            <img src="{{ qrCode }}" alt="QR code du billet" width="110" height="110">
+        {% endif %}
         <div class="barcode-text">
             BKG-{{ '%05d'|format(booking.id) }}-{{ booking.trip.id }}-{{ booking.seatNumber }}
         </div>

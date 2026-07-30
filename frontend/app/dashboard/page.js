@@ -138,7 +138,7 @@ function BookingGroupCard({ group, onCancel, onDownload }) {
   const payMethod = group.find((b) => b.payment?.paymentMethod)?.payment?.paymentMethod
 
   const allIds    = group.map((b) => b.id)
-  const firstPaid = group.find((b) => b.status === 'PAID')
+  const paidIds = group.filter((b) => b.status === 'PAID').map((b) => b.id)
   const firstPending = group.find((b) => b.status === 'PENDING')
 
   return (
@@ -223,11 +223,11 @@ function BookingGroupCard({ group, onCancel, onDownload }) {
           </div>
 
           <div className="flex flex-col gap-2 w-full">
-            {firstPaid && (
-              <button onClick={() => onDownload(firstPaid.id)}
+            {paidIds.length > 0 && (
+              <button onClick={() => onDownload(paidIds)}
                 className="w-full bg-brand-dark text-white text-xs font-bold py-2.5 px-4 rounded-xl
                            hover:bg-brand-blue transition flex items-center justify-center gap-1.5">
-                📄 Télécharger le billet
+                📄 {paidIds.length > 1 ? `Télécharger les ${paidIds.length} billets` : 'Télécharger le billet'}
               </button>
             )}
 
@@ -348,16 +348,20 @@ function DashboardContent() {
     }
   }
 
-  const handleDownload = async (id) => {
+  // Un billet nominatif par siège : on télécharge tous ceux du groupe
+  const handleDownload = async (ids) => {
+    const list = Array.isArray(ids) ? ids : [ids]
     try {
-      const { data } = await downloadTicket(id)
-      const url  = URL.createObjectURL(new Blob([data], { type: 'application/pdf' }))
-      const link = document.createElement('a')
-      link.href  = url
-      link.download = `billet-busgo-${String(id).padStart(5, '0')}.pdf`
-      link.click()
-      URL.revokeObjectURL(url)
-      toast.success('Billet téléchargé !')
+      for (const id of list) {
+        const { data } = await downloadTicket(id)
+        const url  = URL.createObjectURL(new Blob([data], { type: 'application/pdf' }))
+        const link = document.createElement('a')
+        link.href  = url
+        link.download = `billet-busgo-${String(id).padStart(5, '0')}.pdf`
+        link.click()
+        URL.revokeObjectURL(url)
+      }
+      toast.success(list.length > 1 ? `${list.length} billets téléchargés !` : 'Billet téléchargé !')
     } catch {
       toast.error('Impossible de télécharger le billet')
     }

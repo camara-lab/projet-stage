@@ -7,6 +7,8 @@ namespace App\Service;
 use App\Entity\Booking;
 use Dompdf\Dompdf;
 use Dompdf\Options;
+use Endroid\QrCode\QrCode;
+use Endroid\QrCode\Writer\PngWriter;
 use Twig\Environment;
 
 /**
@@ -25,6 +27,7 @@ final class PdfTicketGenerator
     {
         $html = $this->twig->render('pdf/ticket.html.twig', [
             'booking' => $booking,
+            'qrCode'  => $this->buildQrCode($booking),
         ]);
 
         $options = new Options();
@@ -39,6 +42,27 @@ final class PdfTicketGenerator
         $dompdf->render();
 
         return $dompdf->output();
+    }
+
+    /**
+     * Construit le QR code de contrôle (image encodée en base64).
+     *
+     * Il contient les données vérifiables à l'embarquement : référence de la
+     * réservation, trajet et siège. Généré localement, sans appel réseau.
+     */
+    private function buildQrCode(Booking $booking): string
+    {
+        $contenu = sprintf(
+            'BUSGO|RES:%d|TRAJET:%d|SIEGE:%d|%s',
+            $booking->getId(),
+            $booking->getTrip()->getId(),
+            $booking->getSeatNumber(),
+            $booking->getStatus(),
+        );
+
+        $qrCode = new QrCode(data: $contenu, size: 220, margin: 8);
+
+        return (new PngWriter())->write($qrCode)->getDataUri();
     }
 
     /**
