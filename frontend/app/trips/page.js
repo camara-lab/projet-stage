@@ -299,8 +299,14 @@ function TripsContent() {
     }
   }
 
+  const swapCities = () => setSearch((s) => ({ ...s, from: s.to, to: s.from }))
+
   const handleSearch = (e) => {
     e.preventDefault()
+    if (search.from.trim() && search.from.trim().toLowerCase() === search.to.trim().toLowerCase()) {
+      toast.error('La ville de départ et la ville d\'arrivée doivent être différentes')
+      return
+    }
     if (search.type === 'round-trip' && !search.returnDate) {
       toast.error('Sélectionnez une date de retour')
       return
@@ -421,6 +427,16 @@ function TripsContent() {
             <datalist id="trips-cities-from">
               {cities.map((c) => <option key={c.id} value={c.name} />)}
             </datalist>
+
+            <button type="button" onClick={swapCities}
+              title="Inverser départ et arrivée"
+              aria-label="Inverser départ et arrivée"
+              className="flex-shrink-0 self-center w-11 h-11 rounded-full border-2 border-gray-200
+                         flex items-center justify-center text-gray-400 font-bold text-lg
+                         hover:border-brand-green hover:text-brand-green hover:bg-green-50
+                         transition-all active:scale-90">
+              ⇆
+            </button>
             <div className="relative flex-1">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl pointer-events-none">🔴</span>
               <input

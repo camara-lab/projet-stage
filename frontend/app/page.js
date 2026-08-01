@@ -6,6 +6,7 @@ import Footer from '@/components/Footer'
 import { getCities } from '@/lib/api'
 import PassengerSelector from '@/components/PassengerSelector'
 import { getRecentSearches, saveRecentSearch, removeRecentSearch } from '@/lib/recentSearches'
+import toast from 'react-hot-toast'
 
 const POPULAR = [
   {
@@ -60,6 +61,10 @@ export default function Home() {
   const handleSearch = (e) => {
     e.preventDefault()
     if (!form.from || !form.to || !form.date) return
+    if (form.from.trim().toLowerCase() === form.to.trim().toLowerCase()) {
+      toast.error('La ville de départ et la ville d\'arrivée doivent être différentes')
+      return
+    }
     saveRecentSearch({ from: form.from, to: form.to, date: form.date })
     const fId = fromId ?? form.from
     const tId = toId   ?? form.to
