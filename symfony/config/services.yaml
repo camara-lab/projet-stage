@@ -29,6 +29,7 @@ services:
     App\Controller\AuthController:
         arguments:
             $cookieSecure: '%cookie_secure%'
+            $appUrl: '%env(APP_URL)%'
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
@@ -59,6 +60,7 @@ when@test:
         App\Controller\AuthController:
             arguments:
                 $cookieSecure: false
+                $appUrl: 'http://localhost:3000'
 
         App\EventListener\RateLimitListener:
             autoconfigure: false

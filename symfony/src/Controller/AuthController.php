@@ -14,7 +14,10 @@ use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Mailer\MailerInterface;
+use Symfony\Component\Mime\Email;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use OpenApi\Attributes as OA;
@@ -48,6 +51,10 @@ final class AuthController extends AbstractController
         private readonly RefreshTokenRepository       $refreshTokenRepository,
         private readonly JWTTokenManagerInterface     $jwtManager,
         private readonly bool                         $cookieSecure,
+        private readonly MailerInterface               $mailer,
+        private readonly \Twig\Environment            $twig,
+        private readonly string                        $appUrl,
+        private readonly LoggerInterface               $logger,
     ) {
     }
 
@@ -230,11 +237,36 @@ final class AuthController extends AbstractController
         $user->setResetTokenExpiresAt($expiresAt);
         $this->em->flush();
 
-        // En prod : envoyer un email avec le lien. Ici : retour du token pour dev.
-        return new JsonResponse([
-            'message'   => 'Si cet email est enregistré, un lien de réinitialisation a été envoyé.',
-            '_dev_token' => $token, // à retirer en production
-        ]);
+        $this->envoyerEmailReinitialisation($user, $token);
+
+        return $genericResponse;
+    }
+
+    /**
+     * Envoie le lien de réinitialisation. Un échec d'envoi ne doit jamais
+     * révéler l'existence du compte ni interrompre la requête.
+     */
+    private function envoyerEmailReinitialisation(User $user, string $token): void
+    {
+        $lien = rtrim($this->appUrl, '/').'/auth/reset-password?token='.$token;
+
+        try {
+            $email = (new Email())
+                ->from('contact@busgo.ma')
+                ->to($user->getEmail())
+                ->subject('Réinitialisation de votre mot de passe BusGo')
+                ->html($this->twig->render('emails/reset_password.html.twig', [
+                    'fullName' => $user->getFullName(),
+                    'resetUrl' => $lien,
+                ]));
+
+            $this->mailer->send($email);
+        } catch (\Throwable $e) {
+            $this->logger->error('Envoi du mail de réinitialisation impossible : {message}', [
+                'message'   => $e->getMessage(),
+                'exception' => $e,
+            ]);
+        }
     }
 
     #[Route('/api/auth/reset-password', name: 'api_reset_password', methods: ['POST'])]
