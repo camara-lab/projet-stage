@@ -36,7 +36,7 @@ export default function Footer() {
             <h4 className="text-white font-semibold mb-4">Contact</h4>
             <ul className="space-y-2 text-sm">
               <li>📧 contact@busgo.ma</li>
-              <li>📞 +212 5XX-XXXXXX</li>
+              <li>📞 +212 766-610106</li>
               <li>🕐 24h/24, 7j/7</li>
             </ul>
           </div>

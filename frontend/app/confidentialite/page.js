@@ -25,7 +25,7 @@ export default function ConfidentialitePage() {
         },
         {
           title: 'Vos droits',
-          body: "Conformément à la loi 09-08 relative à la protection des données personnelles au Maroc, vous disposez d'un droit d'accès, de rectification et de suppression de vos données. Pour l'exercer, contactez-nous à contact@busgo.ma.",
+          body: "Conformément à la loi 09-08 relative à la protection des données personnelles au Maroc, vous disposez d'un droit d'accès, de rectification et de suppression de vos données. Pour l'exercer, contactez-nous à contact@busgo.ma ou au +212 766-610106.",
         },
       ]}
     />

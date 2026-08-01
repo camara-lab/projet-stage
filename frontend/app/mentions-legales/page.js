@@ -9,7 +9,7 @@ export default function MentionsLegalesPage() {
       sections={[
         {
           title: 'Éditeur du site',
-          body: "BusGo, plateforme de réservation de billets de bus inter-villes.\nProjet développé dans le cadre d'un stage de fin d'études (PFE).\nContact : contact@busgo.ma",
+          body: "BusGo, plateforme de réservation de billets de bus inter-villes.\nProjet développé dans le cadre d'un stage de fin d'études (PFE).\nContact : contact@busgo.ma — +212 766-610106",
         },
         {
           title: 'Hébergement',
