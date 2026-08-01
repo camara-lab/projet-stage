@@ -43,7 +43,7 @@ final class AdminPaymentController extends AbstractController
                ->setParameter('q', '%'.$search.'%');
         }
 
-        if (\in_array($statut, ['PENDING', 'COMPLETED', 'REFUNDED'], true)) {
+        if (\in_array($statut, ['PENDING', 'SUCCESS', 'REFUNDED'], true)) {
             $qb->andWhere('p.paymentStatus = :statut')->setParameter('statut', $statut);
         }
 
@@ -60,8 +60,8 @@ final class AdminPaymentController extends AbstractController
         // KPIs calculés en SQL sur TOUS les paiements (pas seulement les filtrés)
         $kpis = $repo->createQueryBuilder('p2')
             ->select(
-                "COALESCE(SUM(CASE WHEN p2.paymentStatus = 'COMPLETED' THEN p2.amount ELSE 0 END), 0) AS total",
-                "SUM(CASE WHEN p2.paymentStatus = 'COMPLETED' THEN 1 ELSE 0 END) AS completed",
+                "COALESCE(SUM(CASE WHEN p2.paymentStatus = 'SUCCESS' THEN p2.amount ELSE 0 END), 0) AS total",
+                "SUM(CASE WHEN p2.paymentStatus = 'SUCCESS' THEN 1 ELSE 0 END) AS completed",
                 "SUM(CASE WHEN p2.paymentStatus = 'PENDING' THEN 1 ELSE 0 END) AS pending",
                 "SUM(CASE WHEN p2.paymentStatus = 'REFUNDED' THEN 1 ELSE 0 END) AS refunded",
             )
@@ -119,7 +119,7 @@ final class AdminPaymentController extends AbstractController
                     $payment->getId(),
                     $booking->getId(),
                 ));
-            } elseif ($nouveauStatut === 'COMPLETED' && $ancienStatut !== 'COMPLETED') {
+            } elseif ($nouveauStatut === 'SUCCESS' && $ancienStatut !== 'SUCCESS') {
                 // Paiement validé manuellement → réservation payée
                 $booking->setStatus('PAID');
                 $this->addFlash('success', sprintf(

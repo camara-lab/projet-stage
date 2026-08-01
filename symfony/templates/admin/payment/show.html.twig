@@ -13,7 +13,7 @@
                 <i class="ti ti-credit-card" style="color:var(--accent-blue)"></i> Paiement
             </h6>
             {% set st = payment.paymentStatus|lower %}
-            {% if st == 'completed' %}
+            {% if st == 'success' %}
                 <span class="badge-pill badge-paid">COMPLÉTÉ</span>
             {% elseif st == 'pending' %}
                 <span class="badge-pill badge-pending">EN ATTENTE</span>
@@ -111,7 +111,7 @@
         <i class="ti ti-pencil"></i> Modifier
     </a>
 
-    {% if payment.paymentStatus == 'COMPLETED' %}
+    {% if payment.paymentStatus == 'SUCCESS' %}
     <form method="post" action="{{ path('admin_payment_refund', {id: payment.id}) }}"
           onsubmit="return confirm('Rembourser ce paiement et annuler la réservation ?')">
         <input type="hidden" name="_token" value="{{ csrf_token('refund-payment-' ~ payment.id) }}">

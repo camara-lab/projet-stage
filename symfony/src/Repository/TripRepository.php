@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Entity\Booking;
+use DateTimeImmutable;
 use App\Entity\Bus;
 use App\Entity\Trip;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -55,6 +56,8 @@ class TripRepository extends ServiceEntityRepository
             ->join('t.bus', 'b')
             ->addSelect('r', 'dc', 'ac', 'b')
             ->where('t.status = :statut')
+            ->andWhere('t.departureTime > :maintenant')
+            ->setParameter('maintenant', new DateTimeImmutable())
             ->setParameter('statut', 'SCHEDULED')
             ->orderBy('t.departureTime', 'ASC')
             ->setFirstResult(($page - 1) * self::PAR_PAGE)
@@ -101,6 +104,8 @@ class TripRepository extends ServiceEntityRepository
             ->join('r.departureCity', 'dc')
             ->join('r.arrivalCity', 'ac')
             ->where('t.status = :statut')
+            ->andWhere('t.departureTime > :maintenant')
+            ->setParameter('maintenant', new DateTimeImmutable())
             ->setParameter('statut', 'SCHEDULED');
 
         if (null !== $fromId) {

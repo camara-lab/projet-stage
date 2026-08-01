@@ -12,8 +12,8 @@
             <span class="kpi-label">Total encaissé</span>
             <div class="kpi-icon-circle kpi-icon-green"><i class="ti ti-cash"></i></div>
         </div>
-        <div class="kpi-value">{{ total|number_format(0,',',' ') }} <span class="kpi-unit">DH</span></div>
-        <div class="kpi-sub">Paiements COMPLETED</div>
+        <div class="kpi-value">{{ total|number_format(2,',',' ') }} <span class="kpi-unit">DH</span></div>
+        <div class="kpi-sub">Paiements encaissés</div>
     </div>
 
     <div class="kpi-card">
@@ -60,7 +60,7 @@
             <label for="statut">Statut</label>
             <select id="statut" name="statut" class="filter-select">
                 <option value="">Tous</option>
-                <option value="COMPLETED" {{ statut == 'COMPLETED' ? 'selected' }}>Complété</option>
+                <option value="SUCCESS" {{ statut == 'SUCCESS' ? 'selected' }}>Complété</option>
                 <option value="PENDING"   {{ statut == 'PENDING'   ? 'selected' }}>En attente</option>
                 <option value="REFUNDED"  {{ statut == 'REFUNDED'  ? 'selected' }}>Remboursé</option>
             </select>
@@ -128,7 +128,7 @@
                     </td>
                     <td>
                         {% set st = p.paymentStatus|lower %}
-                        {% if st == 'completed' %}
+                        {% if st == 'success' %}
                             <span class="badge-pill badge-paid">COMPLÉTÉ</span>
                         {% elseif st == 'pending' %}
                             <span class="badge-pill badge-pending">EN ATTENTE</span>
@@ -154,8 +154,8 @@
                             <i class="ti ti-pencil"></i>
                         </a>
 
-                        {# Rembourser rapide — seulement si COMPLETED #}
-                        {% if p.paymentStatus == 'COMPLETED' %}
+                        {# Rembourser rapide — seulement si encaissé #}
+                        {% if p.paymentStatus == 'SUCCESS' %}
                         <form method="post" action="{{ path('admin_payment_refund', {id: p.id}) }}" class="d-inline"
                               onsubmit="return confirm('Rembourser le paiement #{{ p.id }} et annuler la réservation liée ?')">
                             <input type="hidden" name="_token" value="{{ csrf_token('refund-payment-' ~ p.id) }}">

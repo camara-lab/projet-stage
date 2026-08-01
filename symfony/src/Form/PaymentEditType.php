@@ -22,7 +22,7 @@ class PaymentEditType extends AbstractType
                 'attr'    => ['class' => 'form-select'],
                 'choices' => [
                     'En attente'  => 'PENDING',
-                    'Complété'    => 'COMPLETED',
+                    'Complété'    => 'SUCCESS',
                     'Remboursé'   => 'REFUNDED',
                 ],
                 'constraints' => [new NotBlank()],

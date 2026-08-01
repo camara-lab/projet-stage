@@ -103,12 +103,18 @@ final class BookingService
         return $this->createBooking($user, $trip, $seatNumber);
     }
 
-    /** Vérifie que le trajet est en statut SCHEDULED (ni annulé, ni terminé). */
+    /** Vérifie que le trajet est réservable : statut SCHEDULED et départ à venir. */
     private function assertTripIsAvailable(Trip $trip): void
     {
         if (in_array($trip->getStatus(), ['CANCELLED', 'COMPLETED'], true)) {
             $tripId = $trip->getId() ?? throw new \LogicException('Trip must be persisted before booking.');
             throw new TripNotAvailableException($tripId, $trip->getStatus());
+        }
+
+        // Un bus déjà parti n'est plus réservable, même si l'API est appelée directement.
+        if ($trip->getDepartureTime() <= new \DateTimeImmutable()) {
+            $tripId = $trip->getId() ?? throw new \LogicException('Trip must be persisted before booking.');
+            throw new TripNotAvailableException($tripId, 'DEPARTED');
         }
     }
 
