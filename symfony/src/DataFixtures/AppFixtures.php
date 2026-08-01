@@ -31,7 +31,7 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
  * Comptes de test :
  *  - passager@test.ma  / Test1234   (ROLE_USER)
  *  - passager2@test.ma / Test1234   (ROLE_USER)
- *  - admin@test.ma     / Admin1234  (ROLE_ADMIN)
+ *  - compte admin : mot de passe lu depuis la variable ADMIN_PASSWORD
  *
  * Recherche rapide pour tester l'API :
  *  GET /api/trips?from=1&to=3        → Casa → Marrakech (par ID)
@@ -140,7 +140,7 @@ class AppFixtures extends Fixture
         $admin->setEmail('admin.josephine20camara@gmail.com');
         $admin->setFullName('Josephine Camara Admin');
         $admin->setRole('ADMIN');
-        $admin->setPassword($this->passwordHasher->hashPassword($admin, 'Admin1234'));
+        $admin->setPassword($this->passwordHasher->hashPassword($admin, $_ENV['ADMIN_PASSWORD'] ?? 'ChangeMoi!2026'));
         $manager->persist($admin);
 
         // Flush avant les réservations pour que les IDs soient disponibles
