@@ -27,10 +27,18 @@ final class RegisterRequest
         public readonly string $password,
 
         #[Assert\NotBlank(message: 'Le nom complet est obligatoire.')]
-        #[Assert\Length(min: 2, max: 255)]
+        #[Assert\Length(min: 2, max: 60, minMessage: 'Le nom doit contenir au moins {{ limit }} caractères.')]
+        // Le billet est nominatif : le nom doit correspondre à une pièce d'identité.
+        #[Assert\Regex(
+            pattern: '/^[\p{L}]+(?:[ \'\-][\p{L}]+)*$/u',
+            message: 'Le nom ne peut contenir que des lettres, espaces, tirets et apostrophes.',
+        )]
         public readonly string $fullName,
 
-        #[Assert\Length(max: 20)]
+        #[Assert\Regex(
+            pattern: '/^(?:\+212|0)[5-7][0-9]{8}$/',
+            message: 'Le numéro doit être un mobile ou fixe marocain valide (ex: 0612345678 ou +212612345678).',
+        )]
         public readonly ?string $phone = null,
 
         #[Assert\Length(min: 8, max: 10, minMessage: 'Le CIN doit contenir au moins {{ limit }} caractères.', maxMessage: 'Le CIN ne peut pas dépasser {{ limit }} caractères.')]
