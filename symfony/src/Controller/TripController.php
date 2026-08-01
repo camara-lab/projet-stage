@@ -161,6 +161,24 @@ final class TripController extends AbstractController
 
 
     /**
+     * Prochaines dates ayant des trajets sur une ligne donnée.
+     *
+     * Permet de proposer des alternatives pertinentes quand une recherche
+     * ne renvoie aucun résultat.
+     */
+    #[Route('/next-dates', name: 'next_dates', methods: ['GET'])]
+    public function prochainesDates(Request $request, TripRepository $tripRepository): JsonResponse
+    {
+        $dates = $tripRepository->trouverProchainesDatesDisponibles(
+            $request->query->get('departureCity'),
+            $request->query->get('arrivalCity'),
+            3,
+        );
+
+        return $this->json(['dates' => $dates]);
+    }
+
+    /**
      * Sérialise un trajet pour la liste paginée (format allégé).
      * Les places disponibles ne sont pas calculées ici pour éviter le N+1.
      *

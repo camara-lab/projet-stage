@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
-import { getTrips, getCities } from '@/lib/api'
+import { getTrips, getCities, getNextDates } from '@/lib/api'
 import toast from 'react-hot-toast'
 import { TripsListSkeleton } from '@/components/Skeleton'
 import PassengerSelector, { calcTotalPrice } from '@/components/PassengerSelector'
@@ -33,10 +33,22 @@ function fmtDate(dateStr) {
 }
 
 function NoTripsFound({ date, from, to, router }) {
-  const yesterday = offsetDate(date, -1)
-  const tomorrow  = offsetDate(date, +1)
-  const today     = new Date().toISOString().split('T')[0]
-  const canGoBack = yesterday >= today
+  const today = new Date().toISOString().split('T')[0]
+
+  // Dates ayant réellement des trajets sur cette ligne, plutôt que
+  // de proposer aveuglément la veille et le lendemain.
+  const [suggestions, setSuggestions] = useState([])
+  const [loadingSuggestions, setLoadingSuggestions] = useState(true)
+
+  useEffect(() => {
+    const params = {}
+    if (from) params.departureCity = from
+    if (to)   params.arrivalCity   = to
+    getNextDates(params)
+      .then(({ data }) => setSuggestions((data.dates || []).filter((d) => d !== date)))
+      .catch(() => setSuggestions([]))
+      .finally(() => setLoadingSuggestions(false))
+  }, [from, to, date])
 
   const go = (d, f = from, t = to) =>
     router.push(`/trips?from=${encodeURIComponent(f)}&to=${encodeURIComponent(t)}&date=${d}`)
@@ -52,22 +64,27 @@ function NoTripsFound({ date, from, to, router }) {
             : 'Essayez une autre date ou destination'}
         </p>
 
-        {date && (
-          <div className="flex flex-wrap items-center justify-center gap-3 mb-8">
-            {canGoBack && (
-              <button onClick={() => go(yesterday)}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl border-2 border-gray-200
-                           text-sm font-semibold text-gray-700 hover:border-brand-green
-                           hover:text-brand-green transition">
-                ← Veille · {fmtDate(yesterday)}
-              </button>
-            )}
-            <button onClick={() => go(tomorrow)}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-dark text-white
-                         text-sm font-bold hover:bg-brand-blue transition">
-              Lendemain · {fmtDate(tomorrow)} →
-            </button>
+        {loadingSuggestions ? (
+          <p className="text-sm text-gray-400 mb-8">Recherche des prochaines dates disponibles…</p>
+        ) : suggestions.length > 0 ? (
+          <div className="mb-8">
+            <p className="text-sm font-semibold text-gray-700 mb-3">
+              Prochaines dates avec des trajets disponibles
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              {suggestions.map((d) => (
+                <button key={d} onClick={() => go(d)}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-dark text-white
+                             text-sm font-bold hover:bg-brand-blue transition">
+                  {fmtDate(d)} →
+                </button>
+              ))}
+            </div>
           </div>
+        ) : (
+          <p className="text-sm text-gray-400 mb-8">
+            Aucun trajet à venir sur cette ligne pour le moment.
+          </p>
         )}
       </div>
 

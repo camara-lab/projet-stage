@@ -130,6 +130,55 @@ class TripRepository extends ServiceEntityRepository
         return (int) $qb->getQuery()->getSingleScalarResult();
     }
 
+    /**
+     * Retourne les prochaines dates ayant réellement des trajets sur cette ligne.
+     *
+     * Utilisé pour proposer des alternatives quand une recherche ne donne rien,
+     * plutôt que de suggérer aveuglément la veille et le lendemain.
+     *
+     * @return string[] dates au format Y-m-d, ordonnées, au plus $limite
+     */
+    public function trouverProchainesDatesDisponibles(
+        ?string $villeDepart,
+        ?string $villeArrivee,
+        int $limite = 3,
+    ): array {
+        $qb = $this->createQueryBuilder('t')
+            ->select('t.departureTime')
+            ->join('t.route', 'r')
+            ->join('r.departureCity', 'dc')
+            ->join('r.arrivalCity', 'ac')
+            ->where('t.status = :statut')
+            ->andWhere('t.departureTime > :maintenant')
+            ->setParameter('maintenant', new DateTimeImmutable())
+            ->setParameter('statut', 'SCHEDULED')
+            ->orderBy('t.departureTime', 'ASC');
+
+        if (null !== $villeDepart && '' !== $villeDepart) {
+            $qb->andWhere('dc.name LIKE :depart')->setParameter('depart', $villeDepart.'%');
+        }
+
+        if (null !== $villeArrivee && '' !== $villeArrivee) {
+            $qb->andWhere('ac.name LIKE :arrivee')->setParameter('arrivee', $villeArrivee.'%');
+        }
+
+        $dates = [];
+
+        foreach ($qb->getQuery()->getResult() as $ligne) {
+            $jour = $ligne['departureTime']->format('Y-m-d');
+
+            if (!in_array($jour, $dates, true)) {
+                $dates[] = $jour;
+            }
+
+            if (count($dates) >= $limite) {
+                break;
+            }
+        }
+
+        return $dates;
+    }
+
     // -------------------------------------------------------------------------
     // Calcul des places disponibles (batch — évite le N+1)
     // -------------------------------------------------------------------------
