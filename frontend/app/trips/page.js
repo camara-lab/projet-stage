@@ -348,9 +348,9 @@ function TripsContent() {
 
   const CRENEAUX = [
     { key: 'all',   label: 'Tous horaires' },
-    { key: 'matin', label: '🌅 Matin' },
-    { key: 'aprem', label: '☀️ Après-midi' },
-    { key: 'soir',  label: '🌙 Soir' },
+    { key: 'matin', label: 'Matin' },
+    { key: 'aprem', label: 'Après-midi' },
+    { key: 'soir',  label: 'Soir' },
   ]
 
   const tripSorters = {
