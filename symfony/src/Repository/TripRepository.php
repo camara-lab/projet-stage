@@ -131,6 +131,56 @@ class TripRepository extends ServiceEntityRepository
     }
 
     /**
+     * Lignes réellement desservies, avec prix et durée calculés depuis les
+     * trajets à venir. Utilisé par la section « destinations populaires »
+     * afin de ne jamais proposer une ligne inexistante.
+     *
+     * @return array<int, array{from: string, to: string, price: string, durationMinutes: int, trips: int}>
+     */
+    public function trouverLignesPopulaires(int $limite = 4): array
+    {
+        $trajets = $this->createQueryBuilder('t')
+            ->join('t.route', 'r')
+            ->join('r.departureCity', 'dc')
+            ->join('r.arrivalCity', 'ac')
+            ->addSelect('r', 'dc', 'ac')
+            ->where('t.status = :statut')
+            ->andWhere('t.departureTime > :maintenant')
+            ->setParameter('maintenant', new DateTimeImmutable())
+            ->setParameter('statut', 'SCHEDULED')
+            ->orderBy('t.departureTime', 'ASC')
+            ->getQuery()->getResult();
+
+        $lignes = [];
+
+        foreach ($trajets as $trajet) {
+            $route = $trajet->getRoute();
+            $cle   = $route->getId();
+
+            if (!isset($lignes[$cle])) {
+                $duree = (int) round(
+                    ($trajet->getArrivalTime()->getTimestamp() - $trajet->getDepartureTime()->getTimestamp()) / 60
+                );
+
+                $lignes[$cle] = [
+                    'from'            => $route->getDepartureCity()->getName(),
+                    'to'              => $route->getArrivalCity()->getName(),
+                    'price'           => $route->getBasePrice(),
+                    'durationMinutes' => $duree,
+                    'trips'           => 0,
+                ];
+            }
+
+            ++$lignes[$cle]['trips'];
+        }
+
+        // Les lignes les mieux desservies en premier
+        usort($lignes, static fn (array $a, array $b): int => $b['trips'] <=> $a['trips']);
+
+        return array_slice($lignes, 0, $limite);
+    }
+
+    /**
      * Retourne les prochaines dates ayant réellement des trajets sur cette ligne.
      *
      * Utilisé pour proposer des alternatives quand une recherche ne donne rien,

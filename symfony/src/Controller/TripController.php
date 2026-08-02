@@ -161,6 +161,15 @@ final class TripController extends AbstractController
 
 
     /**
+     * Lignes réellement desservies, pour la section « destinations populaires ».
+     */
+    #[Route('/popular-routes', name: 'popular_routes', methods: ['GET'])]
+    public function lignesPopulaires(TripRepository $tripRepository): JsonResponse
+    {
+        return $this->json(['routes' => $tripRepository->trouverLignesPopulaires(4)]);
+    }
+
+    /**
      * Prochaines dates ayant des trajets sur une ligne donnée.
      *
      * Permet de proposer des alternatives pertinentes quand une recherche
