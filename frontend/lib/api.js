@@ -64,7 +64,8 @@ export const logout         = () => api.post('/auth/logout')
 export const getTrips  = (params) => api.get('/trips', { params })
 export const getTrip   = (id)     => api.get(`/trips/${id}`)
 export const getCities = ()       => api.get('/cities')
-export const getNextDates = (params) => api.get('/trips/next-dates', { params })
+export const getNextDates     = (params) => api.get('/trips/next-dates', { params })
+export const getPopularRoutes = ()       => api.get('/trips/popular-routes')
 
 // ── Bookings ──────────────────────────────────────────
 export const createBooking  = (data) => api.post('/bookings', data)

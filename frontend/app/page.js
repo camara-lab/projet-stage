@@ -3,33 +3,27 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
-import { getCities } from '@/lib/api'
+import { getCities, getPopularRoutes } from '@/lib/api'
 import PassengerSelector from '@/components/PassengerSelector'
 import { getRecentSearches, saveRecentSearch, removeRecentSearch } from '@/lib/recentSearches'
 import toast from 'react-hot-toast'
 
-const POPULAR = [
-  {
-    from: 'Casablanca', to: 'Marrakech', price: '80', duration: '3h30',
-    img: 'https://images.unsplash.com/photo-1597211684565-dca64d72bdfe?w=600&q=80',
-    desc: 'Ville Ocre & Palmeraie',
-  },
-  {
-    from: 'Rabat', to: 'Fès', price: '60', duration: '2h45',
-    img: 'https://images.unsplash.com/photo-1553603227-2358aabe821e?w=600&q=80',
-    desc: 'Médina & Tanneries',
-  },
-  {
-    from: 'Tanger', to: 'Casablanca', price: '100', duration: '5h',
-    img: 'https://images.unsplash.com/photo-1548013146-72479768bada?w=600&q=80',
-    desc: 'Détroit & Art de Vivre',
-  },
-  {
-    from: 'Agadir', to: 'Marrakech', price: '70', duration: '3h',
-    img: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=600&q=80',
-    desc: 'Corniche & Souss',
-  },
-]
+// Illustrations par ville d'arrivée ; les lignes elles-mêmes viennent de l'API.
+const IMAGES_VILLES = {
+  Marrakech: { img: 'https://images.unsplash.com/photo-1597211684565-dca64d72bdfe?w=600&q=80', desc: 'Ville Ocre & Palmeraie' },
+  'Fès':     { img: 'https://images.unsplash.com/photo-1553603227-2358aabe821e?w=600&q=80',  desc: 'Médina & Tanneries' },
+  Casablanca:{ img: 'https://images.unsplash.com/photo-1548013146-72479768bada?w=600&q=80',  desc: 'Port & Art de Vivre' },
+  Rabat:     { img: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=600&q=80', desc: 'Capitale & Kasbah' },
+  Tanger:    { img: 'https://images.unsplash.com/photo-1548013146-72479768bada?w=600&q=80',  desc: 'Détroit & Médina' },
+}
+
+const IMAGE_DEFAUT = { img: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=600&q=80', desc: 'Destination' }
+
+function formatDuree(minutes) {
+  const h = Math.floor(minutes / 60)
+  const m = minutes % 60
+  return m > 0 ? `${h}h${String(m).padStart(2, '0')}` : `${h}h`
+}
 
 export default function Home() {
   const router = useRouter()
@@ -37,15 +31,15 @@ export default function Home() {
 
   const [form,       setForm]       = useState({ from: '', to: '', date: today })
   const [cities,     setCities]     = useState([])
-  const [fromId,     setFromId]     = useState(null)
-  const [toId,       setToId]       = useState(null)
   const [passengers, setPassengers] = useState({ adults: 1, children: 0, babies: 0 })
+  const [popular,    setPopular]    = useState([])
   const [recent,     setRecent]     = useState([])
   const [showRecent, setShowRecent] = useState(false)
   const searchRef = useRef(null)
 
   useEffect(() => {
     getCities().then(({ data }) => setCities(data)).catch(() => {})
+    getPopularRoutes().then(({ data }) => setPopular(data.routes || [])).catch(() => setPopular([]))
     setRecent(getRecentSearches())
   }, [])
 
@@ -66,11 +60,11 @@ export default function Home() {
       return
     }
     saveRecentSearch({ from: form.from, to: form.to, date: form.date })
-    const fId = fromId ?? form.from
-    const tId = toId   ?? form.to
+    // On transmet les NOMS de villes : l'API sait les résoudre, et l'URL
+    // reste lisible et partageable (/trips?from=Casablanca&to=Marrakech).
     const { adults, children, babies } = passengers
     router.push(
-      `/trips?from=${encodeURIComponent(fId)}&to=${encodeURIComponent(tId)}&date=${form.date}` +
+      `/trips?from=${encodeURIComponent(form.from)}&to=${encodeURIComponent(form.to)}&date=${form.date}` +
       `&adults=${adults}&children=${children}&babies=${babies}`
     )
   }
@@ -139,8 +133,6 @@ export default function Home() {
                       onChange={(e) => {
                         const val = e.target.value
                         setForm({ ...form, from: val })
-                        const match = cities.find((c) => c.name === val)
-                        setFromId(match ? match.id : null)
                       }}
                       onFocus={() => setShowRecent(true)}
                       className="w-full text-lg font-bold text-gray-900 placeholder:text-gray-400
@@ -174,8 +166,6 @@ export default function Home() {
                     onChange={(e) => {
                       const val = e.target.value
                       setForm({ ...form, to: val })
-                      const match = cities.find((c) => c.name === val)
-                      setToId(match ? match.id : null)
                     }}
                     onFocus={() => setShowRecent(true)}
                     className="w-full text-lg font-bold text-gray-900 placeholder:text-gray-400
@@ -305,7 +295,10 @@ export default function Home() {
           <p className="text-gray-500">Les trajets les plus empruntés par nos voyageurs</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {POPULAR.map((d) => (
+          {popular.map((ligne) => {
+            const visuel = IMAGES_VILLES[ligne.to] || IMAGE_DEFAUT
+            const d = { ...ligne, ...visuel, duration: formatDuree(ligne.durationMinutes) }
+            return (
             <button key={d.from + d.to} onClick={() => goPopular(d)}
               className="group text-left rounded-2xl overflow-hidden shadow-md
                          hover:shadow-xl transition-all duration-300 hover:-translate-y-1
@@ -347,7 +340,7 @@ export default function Home() {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <span className="text-brand-green font-black text-base">à partir de {d.price} DH</span>
+                  <span className="text-brand-green font-black text-base">à partir de {Number(d.price).toFixed(0)} DH</span>
                   <span className="text-gray-400 text-xs font-medium bg-gray-50 px-2 py-0.5 rounded-full">
                     ⏱ {d.duration}
                   </span>
@@ -358,7 +351,8 @@ export default function Home() {
                 </div>
               </div>
             </button>
-          ))}
+            )
+          })}
         </div>
       </section>
 

@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
-import { getTrips, getCities, getNextDates } from '@/lib/api'
+import { getTrips, getCities, getNextDates, getPopularRoutes } from '@/lib/api'
 import toast from 'react-hot-toast'
 import { TripsListSkeleton } from '@/components/Skeleton'
 import PassengerSelector, { calcTotalPrice } from '@/components/PassengerSelector'
@@ -11,12 +11,6 @@ import { normalizePassengers } from '@/lib/passengers'
 import { getBasePrice } from '@/lib/trips'
 import { saveRecentSearch } from '@/lib/recentSearches'
 
-const POPULAR_ROUTES = [
-  { from: 'Casablanca', to: 'Marrakech' },
-  { from: 'Rabat',      to: 'Fès' },
-  { from: 'Tanger',     to: 'Casablanca' },
-  { from: 'Agadir',     to: 'Marrakech' },
-]
 
 function offsetDate(dateStr, days) {
   if (!dateStr) return new Date().toISOString().split('T')[0]
@@ -39,6 +33,7 @@ function NoTripsFound({ date, from, to, router }) {
   // de proposer aveuglément la veille et le lendemain.
   const [suggestions, setSuggestions] = useState([])
   const [loadingSuggestions, setLoadingSuggestions] = useState(true)
+  const [lignes, setLignes] = useState([])
 
   useEffect(() => {
     const params = {}
@@ -48,6 +43,10 @@ function NoTripsFound({ date, from, to, router }) {
       .then(({ data }) => setSuggestions((data.dates || []).filter((d) => d !== date)))
       .catch(() => setSuggestions([]))
       .finally(() => setLoadingSuggestions(false))
+
+    getPopularRoutes()
+      .then(({ data }) => setLignes(data.routes || []))
+      .catch(() => setLignes([]))
   }, [from, to, date])
 
   const go = (d, f = from, t = to) =>
@@ -93,7 +92,7 @@ function NoTripsFound({ date, from, to, router }) {
           Destinations populaires
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {POPULAR_ROUTES.map((r) => (
+          {lignes.map((r) => (
             <button key={r.from + r.to}
               onClick={() => go(date || today, r.from, r.to)}
               className="card !p-3 text-left hover:border-brand-green border-2 border-transparent
@@ -266,6 +265,8 @@ function TripsContent() {
   const [passengers,       setPassengers]       = useState(initPassengers)
   const [tripSort,         setTripSort]         = useState('dep')
   const [onlyAvail,        setOnlyAvail]        = useState(false)
+  const [creneau,          setCreneau]          = useState('all')
+  const [prixMax,          setPrixMax]          = useState('')
   const [selectedOutbound, setSelectedOutbound] = useState(null)
   const [returnTrips,      setReturnTrips]      = useState([])
   const [returnLoading,    setReturnLoading]    = useState(false)
@@ -345,6 +346,13 @@ function TripsContent() {
     { key: 'avail', label: 'Disponibilité' },
   ]
 
+  const CRENEAUX = [
+    { key: 'all',   label: 'Tous horaires' },
+    { key: 'matin', label: '🌅 Matin' },
+    { key: 'aprem', label: '☀️ Après-midi' },
+    { key: 'soir',  label: '🌙 Soir' },
+  ]
+
   const tripSorters = {
     dep:   (a, b) => new Date(a.heureDepart) - new Date(b.heureDepart),
     price: (a, b) => (parseFloat(a.prixBase) || 0) - (parseFloat(b.prixBase) || 0),
@@ -357,6 +365,21 @@ function TripsContent() {
   }
 
   let sortedTrips = trips.slice()
+
+  // Plage horaire : matin (< 12h), après-midi (12h-18h), soir (>= 18h)
+  if (creneau !== 'all') {
+    sortedTrips = sortedTrips.filter((t) => {
+      const heure = new Date(t.heureDepart).getHours()
+      if (creneau === 'matin')  return heure < 12
+      if (creneau === 'aprem')  return heure >= 12 && heure < 18
+      return heure >= 18
+    })
+  }
+
+  if (prixMax !== '' && !Number.isNaN(Number(prixMax))) {
+    sortedTrips = sortedTrips.filter((t) => getBasePrice(t) <= Number(prixMax))
+  }
+
   if (onlyAvail) {
     sortedTrips = sortedTrips.filter((t) => {
       const d = t.placesDisponibles !== undefined ? t.placesDisponibles : (t.capaciteBus || 0)
@@ -587,6 +610,52 @@ function TripsContent() {
                   ${onlyAvail ? 'bg-brand-dark border-brand-dark' : 'border-gray-400'}`} />
                 Disponibles seulement
               </button>
+            </div>
+
+            {/* Filtres : plage horaire et budget */}
+            <div className="w-full flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-gray-100">
+            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider mr-1">
+              Filtrer
+            </span>
+
+            {CRENEAUX.map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => setCreneau(key)}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold border-2 transition
+                  ${creneau === key
+                    ? 'bg-brand-dark text-white border-brand-dark'
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-brand-green hover:text-brand-green'
+                  }`}
+              >
+                {label}
+              </button>
+            ))}
+
+            <label className="flex items-center gap-2 ml-2 text-xs font-bold text-gray-600">
+              Prix max
+              <input
+                type="number"
+                min="0"
+                step="10"
+                value={prixMax}
+                onChange={(e) => setPrixMax(e.target.value)}
+                placeholder="—"
+                className="w-20 px-2.5 py-1.5 rounded-full border-2 border-gray-200 text-xs
+                           focus:outline-none focus:border-brand-green"
+              />
+              DH
+            </label>
+
+            {(creneau !== 'all' || prixMax !== '') && (
+              <button
+                onClick={() => { setCreneau('all'); setPrixMax('') }}
+                className="text-xs font-semibold text-gray-400 hover:text-brand-dark underline
+                           underline-offset-2 ml-1"
+              >
+                Réinitialiser
+              </button>
+            )}
             </div>
           </div>
         )}
